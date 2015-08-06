@@ -5,7 +5,7 @@ using System.Data.SqlClient;
 
 namespace GlobalSettingsManager
 {
-    public class SettingsRepository : ISettingsRepository
+    public class SqlRepository : ISettingsRepository
     {
         private const string MergeQueryTemplate = @"MERGE INTO {0} AS target
                 USING (VALUES (@name, @value, @category )) AS source (Name, Value, Category)
@@ -22,7 +22,7 @@ namespace GlobalSettingsManager
         private readonly string _mergeQuery;
 
 
-        public SettingsRepository(string connectionString, string settingsTableName)
+        public SqlRepository(string connectionString, string settingsTableName)
         {
             _connectionString = connectionString;
             _settingsTableName = settingsTableName;
