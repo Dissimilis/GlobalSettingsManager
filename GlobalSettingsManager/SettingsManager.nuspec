@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
+    <metadata>
+        <id>GlobalSettingsManager</id>
+        <version>1.0.0.0</version>
+        <title>GlobalSettingsManager</title>
+        <authors>AdDuplex</authors>
+        <owners>AdDuplex</owners>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>AdDuplex global settings reader/writter</description>
+        <releaseNotes />
+    </metadata>
+    <files>
+        <file src="bin\Release\GlobalSettingsManager.dll" target="lib\GlobalSettingsManager.dll" />
+        <file src="bin\Release\GlobalSettingsManager.pdb" target="lib\GlobalSettingsManager.pdb" />
+        <file src="bin\Release\GlobalSettingsManager.xml" target="lib\GlobalSettingsManager.xml" />
+    </files>
+</package>
