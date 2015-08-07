@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
     <metadata>
-        <id>GlobalSettingsManager</id>
+        <id>AdDuplex.GlobalSettingsManager</id>
         <version>1.0.0.0</version>
-        <title>GlobalSettingsManager</title>
+        <title>AdDuplex.GlobalSettingsManager</title>
         <authors>AdDuplex</authors>
         <owners>AdDuplex</owners>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>

@@ -45,6 +45,8 @@ namespace SettingsManagerTests
         public UInt64 BigInteger { get; set; }
         public char Character { get; set; }
         public string Text { get; set; }
+        public TimeSpan TimeSpan { get; set; }
+        public TimeSpan TimeSpan2 { get; set; }
         public CustomSetting Custom {get; set; }
 
     }
@@ -89,6 +91,8 @@ namespace SettingsManagerTests
             settings.Float = float.MaxValue;
             settings.Integer = int.MinValue;
             settings.Time = DateTime.MaxValue;
+            settings.TimeSpan = TimeSpan.MaxValue;
+            settings.TimeSpan2 = new TimeSpan(0, 1, 2, 3);
             settings.Custom = custom;
             
             settings.Save();
@@ -103,6 +107,8 @@ namespace SettingsManagerTests
             Assert.AreEqual(float.MaxValue, settings.Float);
             Assert.AreEqual(int.MinValue, settings.Integer);
             Assert.AreEqual(0, (int)(DateTime.MaxValue - settings.Time).TotalSeconds); //compare only to seconds precision
+            Assert.AreEqual(TimeSpan.MaxValue, settings.TimeSpan);
+            Assert.AreEqual(new TimeSpan(0, 1, 2, 3), settings.TimeSpan2);
             Assert.AreEqual(custom, settings.Custom);
         }
 
