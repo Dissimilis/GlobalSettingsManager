@@ -41,16 +41,19 @@ namespace GlobalSettingsManager
                         {
                             if (PeriodicReaderExecuting != null)
                                 PeriodicReaderExecuting.Invoke(this, new EventArgs());
-                            var settingsFromDb = Repository.ReadSettings(SettingsNames, lastRead).ToArray();
-                            if (settingsFromDb.Length == 0)
+                            var settingsFromRepo = Repository.ReadSettings(SettingsNames, lastRead).ToArray();
+                            if (settingsFromRepo.Length == 0)
                                 continue;
                             foreach (SettingsBase settings in AllSettings.Values)
                             {
                                 var category = settings.Category;
-                                var matchingSettings = settingsFromDb.Where(s => s.Category == category);
+                                var matchingSettings = settingsFromRepo.Where(s => s.Category == category);
                                 SetProperties(settings, matchingSettings);
                             }
-                            lastRead = Now();
+                            var now = Now();
+                            lastRead = settingsFromRepo.Max(s=>s.UpdatedAt); //sets last read time to newest found setting
+                            if (lastRead > now) //last read time must not be greated than current time
+                                lastRead = now;
                         }
                     }
                     catch(OperationCanceledException)
