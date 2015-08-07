@@ -131,6 +131,7 @@ namespace GlobalSettingsManager
         /// </summary>
         /// <typeparam name="T">Settings type</typeparam>
         /// <param name="changeAction">Action for manipulating settings class</param>
+        /// <param name="settings">Settings object to modify</param>
         /// <returns></returns>
         public virtual int ChangeAndSave<T>(Action<T> changeAction, T settings) where T : SettingsBase
         {
