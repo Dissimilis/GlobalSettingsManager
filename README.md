@@ -3,7 +3,7 @@ GlobalSettingsManager (settings writer/reader to/from database. Allows custom se
 
 **Usage examples:**
 ```csharp
-public class MySettings : SelfManagedSettings<Settings>
+public class MySettings : SelfManagedSettings<MySettings>
 {
    public override string Category { get { return "MySettings"; } }
    public DateTime Time { get; set; }
