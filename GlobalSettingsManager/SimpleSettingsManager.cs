@@ -76,8 +76,7 @@ namespace GlobalSettingsManager
                 if (loadedSettings == null || force)
                 {
                     var settingsInstance = new T();
-                    var settingsFromDb = Repository.ReadSettings(settingsInstance.Category).ToArray();
-
+                    var settingsFromDb = Repository.ReadSettings(settingsInstance.Category).ToNonNullArray();
                     if (settingsFromDb.Length == 0)
                     {
                         if (AutoPersistOnCreate)

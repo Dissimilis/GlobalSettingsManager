@@ -41,7 +41,7 @@ namespace GlobalSettingsManager
                         {
                             if (PeriodicReaderExecuting != null)
                                 PeriodicReaderExecuting.Invoke(this, new EventArgs());
-                            var settingsFromRepo = Repository.ReadSettings(SettingsNames, lastRead).ToArray();
+                            var settingsFromRepo = Repository.ReadSettings(SettingsNames, lastRead).ToNonNullArray();
                             if (settingsFromRepo.Length == 0)
                                 continue;
                             foreach (SettingsBase settings in AllSettings.Values)

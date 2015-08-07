@@ -66,6 +66,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DefaultSerializer.cs" />
+    <Compile Include="IEnumerableExtensions.cs" />
     <Compile Include="ISettingsManager.cs" />
     <Compile Include="ISettingsRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
