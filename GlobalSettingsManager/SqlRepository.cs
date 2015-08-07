@@ -10,7 +10,7 @@ namespace GlobalSettingsManager
         private const string MergeQueryTemplate = @"MERGE INTO {0} AS target
                 USING (VALUES (@name, @value, @category )) AS source (Name, Value, Category)
 	                ON target.Name = source.Name AND target.Category = source.Category
-                WHEN MATCHED AND ISNULL(target.Value,'') <> ISNULL(source.Value,'') AND target.UpdatedAt < @now THEN
+                WHEN MATCHED AND ISNULL(target.Value,'') <> ISNULL(source.Value,'') AND target.UpdatedAt < GETUTCDATE() THEN
 	                UPDATE SET target.Value=@value, target.UpdatedAt = GETUTCDATE()
                 WHEN NOT MATCHED THEN
 	                INSERT(Category, Name, Value, UpdatedAt)
