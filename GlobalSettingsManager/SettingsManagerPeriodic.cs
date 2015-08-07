@@ -53,7 +53,7 @@ namespace GlobalSettingsManager
                             lastRead = Now();
                         }
                     }
-                    catch(OperationCanceledException ex)
+                    catch(OperationCanceledException)
                     {
                         throw;
                     }

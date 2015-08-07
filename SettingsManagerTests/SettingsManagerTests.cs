@@ -132,6 +132,9 @@ namespace SettingsManagerTests
             bool cancelEvent = false;
             manager.PeriodicReaderExecuting += (sender, args) => cnt++;
             manager.PeriodicReaderCanceled += (sender, args) => cancelEvent = true;
+
+            
+
             Thread.Sleep(200);
             cts.Cancel();
             Thread.Sleep(200);
