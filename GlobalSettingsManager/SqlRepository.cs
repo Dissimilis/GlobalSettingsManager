@@ -21,6 +21,10 @@ namespace GlobalSettingsManager
         private readonly string _settingsTableName;
         private readonly string _mergeQuery;
 
+        /// <summary>
+        /// Default is false; If set - prevents repository from altering database
+        /// </summary>
+        public bool ReadOnly { get; set; }
 
         public SqlRepository(string connectionString, string settingsTableName)
         {
@@ -31,6 +35,8 @@ namespace GlobalSettingsManager
 
         public bool WriteSetting(SettingsDbModel setting)
         {
+            if (ReadOnly)
+                return false;
             using (var conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
@@ -50,6 +56,8 @@ namespace GlobalSettingsManager
 
         public int WriteSettings(IEnumerable<SettingsDbModel> settings)
         {
+            if (ReadOnly)
+                return 0;
             using (var conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
