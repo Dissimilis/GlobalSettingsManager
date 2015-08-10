@@ -29,6 +29,7 @@ namespace SettingsManagerTests
         }
     }
 
+
     public class Settings : SelfManagedSettings<Settings>
     {
         public override string Category
@@ -48,7 +49,18 @@ namespace SettingsManagerTests
         public TimeSpan TimeSpan { get; set; }
         public TimeSpan TimeSpan2 { get; set; }
         public CustomSetting Custom {get; set; }
+    }
 
+    public class ReadOnlySettings : SelfManagedSettings<ReadOnlySettings>
+    {
+        public override bool ReadOnly {
+            get { return true; }
+        }
+        public override string Category
+        {
+            get { return "Settings2"; }
+        }
+        public string Text { get; set; }
     }
 
     [TestClass]
@@ -139,17 +151,30 @@ namespace SettingsManagerTests
             manager.PeriodicReaderExecuting += (sender, args) => cnt++;
             manager.PeriodicReaderCanceled += (sender, args) => cancelEvent = true;
 
-            
-
             Thread.Sleep(200);
             cts.Cancel();
             Thread.Sleep(200);
             Assert.IsTrue(task.IsCanceled);
             Assert.IsTrue(cancelEvent);
             Assert.IsTrue(cnt > 0);
-
-
         }
 
+        [TestMethod]
+        public void ReadOnlyPropertyMustBeRespected()
+        {
+            var repo = new DummyRepo();
+            var manager = new SettingsManagerPeriodic(repo);
+            var settings = ReadOnlySettings.Get(customSettingsManager: manager);
+
+            settings.Text = "a";
+            settings.Save();
+            settings = ReadOnlySettings.Get(true);
+            Assert.AreNotEqual("a", settings.Text);
+
+            settings.ChangeAndSave(s => s.Text = "b");
+            settings = ReadOnlySettings.Get(true);
+            Assert.AreNotEqual("b", settings.Text);
+            
+        }
     }
 }

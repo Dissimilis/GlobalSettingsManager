@@ -10,6 +10,12 @@ namespace GlobalSettingsManager
     {
 
         /// <summary>
+        /// Indicates if this settings class should not be changed in repository
+        /// </summary>
+        public virtual bool ReadOnly { get; set; }
+
+
+        /// <summary>
         /// Category which will be looked for in repository
         /// </summary>
         public abstract string Category { get; }

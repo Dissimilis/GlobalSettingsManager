@@ -67,7 +67,7 @@ namespace GlobalSettingsManager
             var converter = GetConverter(value.GetType());
             if (converter.CanConvertFrom(typeof(string)) && converter.CanConvertTo(typeof(string)))
             {
-                return converter.ConvertToString(value);
+                return converter.ConvertToString(null, CultureInfo.InvariantCulture,value);
             }
             else
             {
@@ -83,7 +83,7 @@ namespace GlobalSettingsManager
             var converter = GetConverter(type);
             if (converter.CanConvertFrom(typeof(string)))
             {
-                return converter.ConvertFromString(value);
+                return converter.ConvertFromString(null, culture: CultureInfo.InvariantCulture, text: value);
             }
             else
             {

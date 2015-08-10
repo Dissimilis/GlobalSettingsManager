@@ -97,6 +97,7 @@ namespace GlobalSettingsManager
                 return loadedSettings as T;
             }
         }
+        
         public virtual bool Save<T>(Expression<Func<T>> property, SettingsBase settings)
         {
             var propertyInfo = ((MemberExpression)property.Body).Member as PropertyInfo;
@@ -107,7 +108,8 @@ namespace GlobalSettingsManager
             var settingsType = propertyInfo.DeclaringType;
             if (settingsType == null)
                 throw new ArgumentException("Provided 'property' dont have declaring type", "property");
-
+            if (settings.ReadOnly)
+                return false;
             var model = ToDbModel(propertyInfo, settings);
             lock (SyncRoot)
             {
@@ -118,6 +120,8 @@ namespace GlobalSettingsManager
         {
             if (settings == null)
                 throw new ArgumentNullException("settings");
+            if (settings.ReadOnly)
+                return 0;
             var model = ToDbModel(settings);
             lock (SyncRoot)
             {
@@ -141,6 +145,8 @@ namespace GlobalSettingsManager
             {
                 changeAction(settings);
                 var model = ToDbModel(settings);
+                if (settings.ReadOnly)
+                    return 0;
                 return Repository.WriteSettings(model);
             }
         }
