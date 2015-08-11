@@ -177,12 +177,13 @@ namespace GlobalSettingsManager
             return model;
         }
 
-        protected virtual void SetProperties(SettingsBase settings, IEnumerable<SettingsDbModel> dbSettings)
+        protected virtual void SetProperties(SettingsBase settings, IEnumerable<SettingsDbModel> dbSettings, bool? throwSetException = null)
         {
             if (settings == null)
                 throw new ArgumentNullException("settings");
             if (dbSettings == null)
                 throw new ArgumentNullException("dbSettings");
+            throwSetException = throwSetException ?? ThrowPropertySetException;
             foreach (var property in dbSettings)
             {
                 try
@@ -198,12 +199,10 @@ namespace GlobalSettingsManager
                         settings.OnPropertyChanged(property.Name);
                     prop.SetValue(settings, converted,  null);
 
-
-
                 }
                 catch (Exception ex)
                 {
-                    if (!ThrowPropertySetException)
+                    if (!throwSetException.Value)
                     {
                         if (PropertyErrorsCount > PropertyErrorsThreshold && DateTime.UtcNow - FirstPropertyError > TimeSpan.FromMinutes(5)) //reset error counter after 5minutes
                         {

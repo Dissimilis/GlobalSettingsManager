@@ -18,12 +18,17 @@ namespace GlobalSettingsManager
         public event EventHandler PeriodicReaderExecuting;
 
         /// <summary>
+        /// Default is false
+        /// </summary>
+        public bool ThrowPropertySetExceptionsOnPeriocRead { get; set; }
+
+        /// <summary>
         /// Initializes settings reader and starts periodic reading task
         /// </summary>
         /// <param name="repository"></param>
         public SettingsManagerPeriodic(ISettingsRepository repository) : base(repository)
         {
-
+            ThrowPropertySetExceptionsOnPeriocRead = false;
         }
 
         public Task StartReadingTask(TimeSpan interval, CancellationToken token)
@@ -48,7 +53,7 @@ namespace GlobalSettingsManager
                             {
                                 var category = settings.Category;
                                 var matchingSettings = settingsFromRepo.Where(s => s.Category == category);
-                                SetProperties(settings, matchingSettings);
+                                SetProperties(settings, matchingSettings, ThrowPropertySetExceptionsOnPeriocRead);
                             }
                             var now = Now();
                             lastRead = settingsFromRepo.Max(s=>s.UpdatedAt); //sets last read time to newest found setting
