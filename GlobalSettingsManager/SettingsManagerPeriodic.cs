@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace GlobalSettingsManager
 {
-    public class SettingsManagerPeriodic : SimpleSettingsManager
+    public class SettingsManagerPeriodic : DefaultSettingsManager
     {
 
         /// <summary>

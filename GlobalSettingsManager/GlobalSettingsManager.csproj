@@ -73,7 +73,7 @@
     <Compile Include="SelfManagedSettings.cs" />
     <Compile Include="SettingsBase.cs" />
     <Compile Include="SettingsManagerPeriodic.cs" />
-    <Compile Include="SimpleSettingsManager.cs" />
+    <Compile Include="DefaultSettingsManager.cs" />
     <Compile Include="SettingsDbModel.cs" />
     <Compile Include="SettingsPropertyException.cs" />
     <Compile Include="SqlRepository.cs" />

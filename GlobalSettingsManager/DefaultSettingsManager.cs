@@ -7,9 +7,9 @@ using System.Reflection;
 
 namespace GlobalSettingsManager
 {
-    public class SimpleSettingsManager : ISettingsManager
+    public class DefaultSettingsManager : ISettingsManager
     {
-        public static ISettingsManager DefaultSettingsManager { get; set; }
+        public static ISettingsManager DefaultManager { get; set; }
 
         protected const int PropertyErrorsThreshold = 12;
         protected DateTime FirstPropertyError = DateTime.UtcNow;
@@ -52,12 +52,12 @@ namespace GlobalSettingsManager
         /// </summary>
         public ValueConverter Converter { get; set; }
 
-        static SimpleSettingsManager()
+        static DefaultSettingsManager()
         {
 
         }
 
-        public SimpleSettingsManager(ISettingsRepository repository)
+        public DefaultSettingsManager(ISettingsRepository repository)
         {
             Repository = repository;
             Now = () => DateTime.UtcNow;
