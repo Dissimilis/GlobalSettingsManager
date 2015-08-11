@@ -23,7 +23,7 @@ namespace GlobalSettingsManager
         /// <returns></returns>
         public static T Get(bool force = false, ISettingsManager customSettingsManager = null)
         {
-            var manager = customSettingsManager ?? DefaultSettingsManager.DefaultManager;
+            var manager = customSettingsManager ?? DefaultSettingsManager.DefaultManagerInstance;
             if (manager == null)
                 throw new ArgumentNullException("customSettingsManager", "Settings manager not provided and default settings manager is not set");
             var settings = manager.Get<T>(force);
@@ -66,7 +66,7 @@ namespace GlobalSettingsManager
 
         private ISettingsManager GetManager()
         {
-            return (Manager ?? DefaultSettingsManager.DefaultManager);
+            return (Manager ?? DefaultSettingsManager.DefaultManagerInstance);
         }
 
 

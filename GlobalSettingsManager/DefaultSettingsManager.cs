@@ -9,7 +9,7 @@ namespace GlobalSettingsManager
 {
     public class DefaultSettingsManager : ISettingsManager
     {
-        public static ISettingsManager DefaultManager { get; set; }
+        public static ISettingsManager DefaultManagerInstance { get; set; }
 
         protected const int PropertyErrorsThreshold = 12;
         protected DateTime FirstPropertyError = DateTime.UtcNow;

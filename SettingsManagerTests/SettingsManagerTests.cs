@@ -74,7 +74,7 @@ namespace SettingsManagerTests
             repo.Content.Add(new SettingsDbModel() { Category = "Settings", Name = "Decimal", Value = "1.5" });
             repo.Content.Add(new SettingsDbModel() { Category = "Settings", Name = "Text", Value = "test" });
 
-            DefaultSettingsManager.DefaultManager = new SettingsManagerPeriodic(repo);
+            DefaultSettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(repo);
             var settings = Settings.Get();
 
             Assert.AreEqual(1.5m, settings.Decimal);
