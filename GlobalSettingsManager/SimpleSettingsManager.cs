@@ -164,6 +164,8 @@ namespace GlobalSettingsManager
         {
             if (!property.CanRead || !property.CanWrite)
                 return null;
+            if (property.Name == "ReadOnly") //system property
+                return null;
             var value = property.GetValue(settings, null);
             var model = new SettingsDbModel()
             {
