@@ -163,8 +163,9 @@ namespace SettingsManagerTests
         public void ReadOnlyPropertyMustBeRespected()
         {
             var repo = new InMemoryRepository();
-            var manager = new SettingsManagerPeriodic(repo);
-            var settings = ReadOnlySettings.Get(customSettingsManager: manager);
+            SettingsManager.DefaultManagerInstance =  new SettingsManagerPeriodic(repo);
+
+            var settings = ReadOnlySettings.Get();
 
             settings.Text = "a";
             settings.Save();
