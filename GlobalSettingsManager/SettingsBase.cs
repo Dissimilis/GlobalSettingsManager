@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Reflection;
+using System.Security.Policy;
 
 namespace GlobalSettingsManager
 {

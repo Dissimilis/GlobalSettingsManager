@@ -70,11 +70,11 @@ namespace SettingsManagerTests
         [TestMethod]
         public void BasicReading()
         {
-            var repo = new DummyRepo();
+            var repo = new InMemoryRepository();
             repo.Content.Add(new SettingsDbModel() { Category = "Settings", Name = "Decimal", Value = "1.5" });
             repo.Content.Add(new SettingsDbModel() { Category = "Settings", Name = "Text", Value = "test" });
 
-            DefaultSettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(repo);
+            SettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(repo);
             var settings = Settings.Get();
 
             Assert.AreEqual(1.5m, settings.Decimal);
@@ -84,7 +84,7 @@ namespace SettingsManagerTests
         [TestMethod]
         public void SavingAndLoadingMustBeSame()
         {
-            var repo = new DummyRepo();
+            var repo = new InMemoryRepository();
             var manager = new SettingsManagerPeriodic(repo);
             var settings = Settings.Get(customSettingsManager:manager);
 
@@ -127,7 +127,7 @@ namespace SettingsManagerTests
         [TestMethod]
         public void EmptyStringsMustWork()
         {
-            var repo = new DummyRepo();
+            var repo = new InMemoryRepository();
             var manager = new SettingsManagerPeriodic(repo);
             var settings = Settings.Get(customSettingsManager: manager);
 
@@ -141,7 +141,7 @@ namespace SettingsManagerTests
         [TestMethod]
         public void PeriodicReaderCancel()
         {
-            var repo = new DummyRepo();
+            var repo = new InMemoryRepository();
             var manager = new SettingsManagerPeriodic(repo);
             var settings = Settings.Get(customSettingsManager: manager);
             var cts = new CancellationTokenSource();
@@ -162,7 +162,7 @@ namespace SettingsManagerTests
         [TestMethod]
         public void ReadOnlyPropertyMustBeRespected()
         {
-            var repo = new DummyRepo();
+            var repo = new InMemoryRepository();
             var manager = new SettingsManagerPeriodic(repo);
             var settings = ReadOnlySettings.Get(customSettingsManager: manager);
 

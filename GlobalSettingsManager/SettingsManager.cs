@@ -1,15 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
 namespace GlobalSettingsManager
 {
-    public class DefaultSettingsManager : ISettingsManager
+    public class SettingsManager : ISettingsManager
     {
         public static ISettingsManager DefaultManagerInstance { get; set; }
+
+        public const string FlagsCategoryName = "Flags";
 
         protected const int PropertyErrorsThreshold = 12;
         protected DateTime FirstPropertyError = DateTime.UtcNow;
@@ -17,7 +20,9 @@ namespace GlobalSettingsManager
 
         public static readonly object SyncRoot = new object();
         protected ListDictionary AllSettings = new ListDictionary();
-        protected List<string> SettingsNames = new List<string>(10);
+        //protected List<string> SettingsNames = new List<string>(10);
+
+        protected Dictionary<string, bool> Flags = new Dictionary<string, bool>(); 
 
         /// <summary>
         /// Raised on when deserializing property value fails
@@ -52,12 +57,12 @@ namespace GlobalSettingsManager
         /// </summary>
         public ValueConverter Converter { get; set; }
 
-        static DefaultSettingsManager()
+        static SettingsManager()
         {
 
         }
 
-        public DefaultSettingsManager(ISettingsRepository repository)
+        public SettingsManager(ISettingsRepository repository)
         {
             Repository = repository;
             Now = () => DateTime.UtcNow;
@@ -66,6 +71,30 @@ namespace GlobalSettingsManager
             AutoPersistOnCreate = true;
             ThrottlePropertyExceptions = true;
             ThrottlePropertyExceptions = true;
+        }
+
+        /// <summary>
+        /// Checks if flag is set to true
+        /// </summary>
+        /// <param name="flagName"></param>
+        /// <returns>True if flag is set</returns>
+        public bool IsFlagSet(string flagName)
+        {
+            if (Flags == null)
+            {
+                lock (SyncRoot)
+                {
+                    Flags = new Dictionary<string, bool>();
+                    var flagsFromDb = Repository.ReadSettings(FlagsCategoryName).ToNonNullArray();
+                    foreach (var f in flagsFromDb)
+                    {
+                        SetFlag(f.Name, f.Value);
+                    }
+                }
+            }
+            bool flag = false;
+            Flags.TryGetValue(flagName, out flag);
+            return flag;
         }
 
         public T Get<T>(bool force = false) where T : SettingsBase, new()
@@ -88,7 +117,7 @@ namespace GlobalSettingsManager
                     SetProperties(settingsInstance, settingsFromDb);
                     if (loadedSettings == null)
                     {
-                        SettingsNames.Add(settingsInstance.Category);
+                        //SettingsNames.Add(settingsInstance.Category);
                         AllSettings.Add(typeof (T), settingsInstance);
                     }
                     return settingsInstance;
@@ -177,6 +206,22 @@ namespace GlobalSettingsManager
             return model;
         }
 
+        /// <summary>
+        /// Updates flag with provided value
+        /// </summary>
+        /// <returns>True if flag was changed</returns>
+        protected bool SetFlag(string name, string value)
+        {
+            var boolValue = IsTrueString(value);
+            bool flag;
+            if (!Flags.TryGetValue(name, out flag) || flag != boolValue)
+            {
+                Flags[name] = boolValue;
+                return true;
+            }
+            return false;
+        }
+
         protected virtual void SetProperties(SettingsBase settings, IEnumerable<SettingsDbModel> dbSettings, bool? throwSetException = null)
         {
             if (settings == null)
@@ -224,5 +269,17 @@ namespace GlobalSettingsManager
             }
         }
 
+        private bool IsTrueString(string value)
+        {
+            bool boolValue;
+            if (bool.TryParse(value, out boolValue))
+            {
+                return boolValue;
+            }
+            if (value == "1")
+                return true;
+            return false;
+
+        }
     }
 }

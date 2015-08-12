@@ -1,11 +1,14 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace GlobalSettingsManager
 {
-    public class SettingsManagerPeriodic : DefaultSettingsManager
+    public class SettingsManagerPeriodic : SettingsManager
     {
 
         /// <summary>
@@ -21,6 +24,11 @@ namespace GlobalSettingsManager
         /// Default is false
         /// </summary>
         public bool ThrowPropertySetExceptionsOnPeriocRead { get; set; }
+
+        /// <summary>
+        /// This event is raised when flag changes in underlying repository
+        /// </summary>
+        public event PropertyChangedEventHandler FlagChanged;
 
         /// <summary>
         /// Initializes settings reader and starts periodic reading task
@@ -46,7 +54,8 @@ namespace GlobalSettingsManager
                         {
                             if (PeriodicReaderExecuting != null)
                                 PeriodicReaderExecuting.Invoke(this, new EventArgs());
-                            var settingsFromRepo = Repository.ReadSettings(SettingsNames, lastRead).ToNonNullArray();
+
+                            var settingsFromRepo = Repository.ReadSettings(GetCategoriesToRead(), lastRead).ToNonNullArray();
                             if (settingsFromRepo.Length == 0)
                                 continue;
                             foreach (SettingsBase settings in AllSettings.Values)
@@ -54,6 +63,14 @@ namespace GlobalSettingsManager
                                 var category = settings.Category;
                                 var matchingSettings = settingsFromRepo.Where(s => s.Category == category);
                                 SetProperties(settings, matchingSettings, ThrowPropertySetExceptionsOnPeriocRead);
+                            }
+                            foreach (var f in settingsFromRepo.Where(s=>s.Category == FlagsCategoryName))
+                            {
+                                if (SetFlag(f.Name, f.Value))
+                                {
+                                    if (FlagChanged != null)
+                                        FlagChanged.Invoke(this, new PropertyChangedEventArgs(f.Name));
+                                }
                             }
                             var now = Now();
                             lastRead = settingsFromRepo.Max(s=>s.UpdatedAt); //sets last read time to newest found setting
@@ -79,6 +96,15 @@ namespace GlobalSettingsManager
             }, TaskContinuationOptions.OnlyOnCanceled);
             task.ContinueWith(t => { }, TaskContinuationOptions.NotOnRanToCompletion);
             return task;
+        }
+
+
+        private List<string> GetCategoriesToRead()
+        {
+            var result = new List<string>(AllSettings.Count+1);
+            result.AddRange(from object setting in AllSettings select ((SettingsBase) setting).Category);
+            result.Add(FlagsCategoryName);
+            return result;
         }
 
         private Task Delay(TimeSpan interval, CancellationToken token)

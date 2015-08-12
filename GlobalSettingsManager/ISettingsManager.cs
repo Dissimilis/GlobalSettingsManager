@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Linq.Expressions;
 
 namespace GlobalSettingsManager
@@ -13,10 +14,16 @@ namespace GlobalSettingsManager
         /// <returns></returns>
         T Get<T>(bool force) where T : SettingsBase, new();
 
+        /// <summary>
+        /// Checks if flag is set to true
+        /// </summary>
+        /// <param name="flagName"></param>
+        /// <returns>True if flag is set</returns>
+        bool IsFlagSet(string flagName);
+
         bool Save<T>(Expression<Func<T>> property, SettingsBase settings);
         int Save(SettingsBase settings);
-
-
+        
         /// <summary>
         /// Allows to modify settings and save them in single transaction (under lock)
         /// </summary>
@@ -25,5 +32,6 @@ namespace GlobalSettingsManager
         /// <param name="settings"></param>
         /// <returns></returns>
         int ChangeAndSave<T>(Action<T> changeAction, T settings) where T : SettingsBase;
+
     }
 }
