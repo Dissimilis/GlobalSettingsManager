@@ -177,5 +177,25 @@ namespace SettingsManagerTests
             Assert.AreNotEqual("b", settings.Text);
             
         }
+
+        [TestMethod]
+        public void PreriodicReaderMustRaiseError()
+        {
+            var cts = new CancellationTokenSource();
+            var repo = new InMemoryRepository();
+            SettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(repo);
+            var settings = ReadOnlySettings.Get();
+            settings.Text = "a";
+            settings.Save();
+
+            var manager = (SettingsManager.DefaultManagerInstance as SettingsManagerPeriodic);
+            var error = false;
+            manager.PeriodicReaderError += (s, a) => { error = true; };
+            manager.StartReadingTask(TimeSpan.FromMilliseconds(10), cts.Token);
+            Thread.Sleep(200);
+            Assert.AreEqual(false,error);
+
+
+        }
     }
 }

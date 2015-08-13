@@ -102,7 +102,7 @@ namespace GlobalSettingsManager
         private List<string> GetCategoriesToRead()
         {
             var result = new List<string>(AllSettings.Count+1);
-            result.AddRange(from object setting in AllSettings select ((SettingsBase) setting).Category);
+            result.AddRange(from object setting in AllSettings.Values select ((SettingsBase) setting).Category);
             result.Add(FlagsCategoryName);
             return result;
         }
