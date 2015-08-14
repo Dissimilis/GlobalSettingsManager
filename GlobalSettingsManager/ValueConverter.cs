@@ -10,7 +10,7 @@ namespace GlobalSettingsManager
     /// </summary>
     public class IsoDateTimeTypeConverter : TypeConverter
     {
-        private const string Pattern = "yyyy-MM-dd HH-mm-ss";
+        private const string Pattern = "yyyy-MM-dd HH:mm:ss";
         public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
         {
             if (value is string)
