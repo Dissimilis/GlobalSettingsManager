@@ -28,7 +28,7 @@ namespace GlobalSettingsManager
                 throw new ArgumentNullException("customSettingsManager", "Settings manager not provided and default settings manager is not set");
             var settings = manager.Get<T>(force);
             if (settings == null)
-                throw new TypeLoadException("Settings is of wrong type");
+                throw new SettingsGetException("Settings is of wrong type");
             if (customSettingsManager != null)
                 settings.Manager = customSettingsManager;
             return settings;
@@ -70,5 +70,13 @@ namespace GlobalSettingsManager
         }
 
 
+    }
+
+    public class SettingsGetException : Exception
+    {
+        public SettingsGetException(string messgae) : base(messgae)
+        {
+
+        }
     }
 }

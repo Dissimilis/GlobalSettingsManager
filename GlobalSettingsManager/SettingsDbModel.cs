@@ -2,7 +2,7 @@ using System;
 
 namespace GlobalSettingsManager
 {
-    public class SettingsDbModel
+    public class SettingsStorageModel
     {
         public string Category { get; set; }
         public string Name { get; set; }

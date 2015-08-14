@@ -5,9 +5,9 @@ namespace GlobalSettingsManager
 {
     public interface ISettingsRepository
     {
-        bool WriteSetting(SettingsDbModel setting);
-        int WriteSettings(IEnumerable<SettingsDbModel> settings);
-        IEnumerable<SettingsDbModel> ReadSettings(string category);
-        IEnumerable<SettingsDbModel> ReadSettings(IList<string> categories, DateTime? lastChangedMin = null);
+        bool WriteSetting(SettingsStorageModel setting);
+        int WriteSettings(IEnumerable<SettingsStorageModel> settings);
+        IEnumerable<SettingsStorageModel> ReadSettings(string category);
+        IEnumerable<SettingsStorageModel> ReadSettings(IList<string> categories, DateTime? lastChangedMin = null);
     }
 }

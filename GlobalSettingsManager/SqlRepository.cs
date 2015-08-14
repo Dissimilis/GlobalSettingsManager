@@ -33,7 +33,7 @@ namespace GlobalSettingsManager
             _mergeQuery = string.Format(MergeQueryTemplate, _settingsTableName);
         }
 
-        public bool WriteSetting(SettingsDbModel setting)
+        public bool WriteSetting(SettingsStorageModel setting)
         {
             if (ReadOnly)
                 return false;
@@ -54,7 +54,7 @@ namespace GlobalSettingsManager
             }
         }
 
-        public int WriteSettings(IEnumerable<SettingsDbModel> settings)
+        public int WriteSettings(IEnumerable<SettingsStorageModel> settings)
         {
             if (ReadOnly)
                 return 0;
@@ -83,12 +83,12 @@ namespace GlobalSettingsManager
             }
         }
 
-        public IEnumerable<SettingsDbModel> ReadSettings(string category)
+        public IEnumerable<SettingsStorageModel> ReadSettings(string category)
         {
             return ReadSettings(new List<string>(1) { category }, null);
         }
 
-        public IEnumerable<SettingsDbModel> ReadSettings(IList<string> categories, DateTime? lastChangedMin = null)
+        public IEnumerable<SettingsStorageModel> ReadSettings(IList<string> categories, DateTime? lastChangedMin = null)
         {
             if (categories == null || categories.Count == 0)
                 return null;
@@ -113,10 +113,10 @@ namespace GlobalSettingsManager
 
                     using (var reader = cmd.ExecuteReader())
                     {
-                        var result = new List<SettingsDbModel>(42);
+                        var result = new List<SettingsStorageModel>(42);
                         while (reader.Read())
                         {
-                            var setting = new SettingsDbModel()
+                            var setting = new SettingsStorageModel()
                             {
                                 Category = reader.GetString(0),
                                 Name = reader.GetString(1),

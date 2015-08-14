@@ -7,9 +7,9 @@ namespace GlobalSettingsManager
     public class InMemoryRepository : ISettingsRepository
     {
 
-        public List<SettingsDbModel> Content = new List<SettingsDbModel>(); 
+        public List<SettingsStorageModel> Content = new List<SettingsStorageModel>(); 
 
-        public bool WriteSetting(SettingsDbModel s)
+        public bool WriteSetting(SettingsStorageModel s)
         {
             var existing = Content.Single(c => c.Category == s.Category && c.Name == s.Name);
             if (existing == null)
@@ -26,7 +26,7 @@ namespace GlobalSettingsManager
             }
         }
 
-        public int WriteSettings(IEnumerable<SettingsDbModel> settings)
+        public int WriteSettings(IEnumerable<SettingsStorageModel> settings)
         {
             int cnt = 0;
             foreach (var s in settings)
@@ -47,12 +47,12 @@ namespace GlobalSettingsManager
             return cnt;
         }
 
-        public IEnumerable<SettingsDbModel> ReadSettings(string category)
+        public IEnumerable<SettingsStorageModel> ReadSettings(string category)
         {
             return Content.Where(c => c.Category == category);
         }
 
-        public IEnumerable<SettingsDbModel> ReadSettings(IList<string> categories, DateTime? lastChangedMin = null)
+        public IEnumerable<SettingsStorageModel> ReadSettings(IList<string> categories, DateTime? lastChangedMin = null)
         {
             return Content.Where(c => categories.Contains(c.Category) && (c.UpdatedAt <= lastChangedMin || !lastChangedMin.HasValue));
         }

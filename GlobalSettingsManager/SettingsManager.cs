@@ -99,14 +99,14 @@ namespace GlobalSettingsManager
 
         public T Get<T>(bool force = false) where T : SettingsBase, new()
         {
-            var loadedSettings = AllSettings[typeof(T)];
+            var cachedSettings = AllSettings[typeof(T)];
             lock (SyncRoot)
             {
-                if (loadedSettings == null || force)
+                if (cachedSettings == null || force)
                 {
                     var settingsInstance = new T();
-                    var settingsFromDb = Repository.ReadSettings(settingsInstance.Category).ToNonNullArray();
-                    if (settingsFromDb.Length == 0)
+                    var savedSettings = Repository.ReadSettings(settingsInstance.Category).ToNonNullArray();
+                    if (savedSettings.Length == 0)
                     {
                         if (AutoPersistOnCreate)
                         {
@@ -114,8 +114,8 @@ namespace GlobalSettingsManager
                             Repository.WriteSettings(model); //todo: consider moving out of lock
                         }
                     }
-                    SetProperties(settingsInstance, settingsFromDb);
-                    if (loadedSettings == null)
+                    SetProperties(settingsInstance, savedSettings);
+                    if (cachedSettings == null)
                     {
                         //SettingsNames.Add(settingsInstance.Category);
                         AllSettings.Add(typeof (T), settingsInstance);
@@ -123,7 +123,7 @@ namespace GlobalSettingsManager
                     return settingsInstance;
 
                 }
-                return loadedSettings as T;
+                return cachedSettings as T;
             }
         }
         
@@ -132,7 +132,7 @@ namespace GlobalSettingsManager
             var propertyInfo = ((MemberExpression)property.Body).Member as PropertyInfo;
             if (propertyInfo == null)
             {
-                throw new ArgumentException("The lambda expression 'property' should return valid Property");
+                throw new ArgumentException("Expression 'property' should define valid Property");
             }
             var settingsType = propertyInfo.DeclaringType;
             if (settingsType == null)
@@ -180,23 +180,23 @@ namespace GlobalSettingsManager
             }
         }
 
-        protected virtual IEnumerable<SettingsDbModel> ToDbModel(SettingsBase settings)
+        protected virtual IEnumerable<SettingsStorageModel> ToDbModel(SettingsBase settings)
         {
             if (settings == null)
                 throw new ArgumentNullException("settings");
 
             var props = settings.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            return props.Select<PropertyInfo, SettingsDbModel>(prop => ToDbModel(prop, settings)).Where(model => model != null);
+            return props.Select<PropertyInfo, SettingsStorageModel>(prop => ToDbModel(prop, settings)).Where(model => model != null);
         }
 
-        protected virtual SettingsDbModel ToDbModel(PropertyInfo property, SettingsBase settings)
+        protected virtual SettingsStorageModel ToDbModel(PropertyInfo property, SettingsBase settings)
         {
             if (!property.CanRead || !property.CanWrite)
                 return null;
             if (property.Name == "ReadOnly") //system property
                 return null;
             var value = property.GetValue(settings, null);
-            var model = new SettingsDbModel()
+            var model = new SettingsStorageModel()
             {
                 Category = settings.Category,
                 UpdatedAt = DateTime.UtcNow,
@@ -222,13 +222,12 @@ namespace GlobalSettingsManager
             return false;
         }
 
-        protected virtual void SetProperties(SettingsBase settings, IEnumerable<SettingsDbModel> dbSettings, bool? throwSetException = null)
+        protected virtual void SetProperties(SettingsBase settings, IEnumerable<SettingsStorageModel> dbSettings, bool? throwSetException = null)
         {
             if (settings == null)
                 throw new ArgumentNullException("settings");
             if (dbSettings == null)
                 throw new ArgumentNullException("dbSettings");
-            throwSetException = throwSetException ?? ThrowPropertySetException;
             foreach (var property in dbSettings)
             {
                 try
@@ -247,26 +246,32 @@ namespace GlobalSettingsManager
                 }
                 catch (Exception ex)
                 {
-                    if (!throwSetException.Value)
-                    {
-                        if (PropertyErrorsCount > PropertyErrorsThreshold && DateTime.UtcNow - FirstPropertyError > TimeSpan.FromMinutes(5)) //reset error counter after 5minutes
-                        {
-                            PropertyErrorsCount = 0;
-                            FirstPropertyError = DateTime.UtcNow;
-                        }
-                        if (PropertyError != null && (PropertyErrorsCount < PropertyErrorsThreshold || !ThrottlePropertyExceptions)) //only raise event when not throttling
-                        {
-                            PropertyErrorsCount++;
-                            var propertyExeption = new SettingsPropertyException(String.Format("Error setting property {0}.{1}", settings.Category, property.Name), property.Name,settings.Category, ex);
-                            PropertyError.Invoke(settings, new UnhandledExceptionEventArgs(propertyExeption, false));
-                        }
-                    }
-                    else
-                    {
+                    if (!HandlePropertySetException(settings, property, ex))
                         throw;
-                    }
                 }
             }
+        }
+
+        private bool HandlePropertySetException(SettingsBase settings, SettingsStorageModel property, Exception ex, bool? throwSetException = null)
+        {
+            throwSetException = throwSetException ?? ThrowPropertySetException;
+            if (!throwSetException.Value)
+            {
+                if (PropertyErrorsCount > PropertyErrorsThreshold && DateTime.UtcNow - FirstPropertyError > TimeSpan.FromMinutes(5)) //reset error counter after 5minutes
+                {
+                    PropertyErrorsCount = 0;
+                    FirstPropertyError = DateTime.UtcNow;
+                }
+                if (PropertyError != null && (PropertyErrorsCount < PropertyErrorsThreshold || !ThrottlePropertyExceptions)) //only raise event when not throttling
+                {
+                    PropertyErrorsCount++;
+                    var propertyExeption = new SettingsPropertyException(String.Format("Error setting property {0}.{1}", settings.Category, property.Name), property.Name, settings.Category,
+                        ex);
+                    PropertyError.Invoke(settings, new UnhandledExceptionEventArgs(propertyExeption, false));
+                }
+                return true;
+            }
+            return false;
         }
 
         private bool IsTrueString(string value)

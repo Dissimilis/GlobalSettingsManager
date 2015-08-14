@@ -71,8 +71,8 @@ namespace SettingsManagerTests
         public void BasicReading()
         {
             var repo = new InMemoryRepository();
-            repo.Content.Add(new SettingsDbModel() { Category = "Settings", Name = "Decimal", Value = "1.5" });
-            repo.Content.Add(new SettingsDbModel() { Category = "Settings", Name = "Text", Value = "test" });
+            repo.Content.Add(new SettingsStorageModel() { Category = "Settings", Name = "Decimal", Value = "1.5" });
+            repo.Content.Add(new SettingsStorageModel() { Category = "Settings", Name = "Text", Value = "test" });
 
             SettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(repo);
             var settings = Settings.Get();
