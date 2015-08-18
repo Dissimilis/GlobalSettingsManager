@@ -1,6 +1,6 @@
 GlobalSettingsManager
 =============
-Libarary for sharing settings across multiple projects. 
+Library for sharing settings across multiple projects. 
 Currently it has implementation to use SQL Server for storage and communication. 
 
 It should be easy to implement custom ISettingsRepository for using pub/sub or different databases.
@@ -53,4 +53,3 @@ manager.ThrottlePropertyExceptions = true;
 
 //use this event to log exceptions from running task
 manager.PeriodicReaderError += (sender, args) => { Console.WriteLine(args.ExceptionObject.ToString()); };
-
