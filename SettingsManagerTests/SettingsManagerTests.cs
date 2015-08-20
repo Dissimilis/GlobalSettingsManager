@@ -4,6 +4,7 @@ using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
 using GlobalSettingsManager;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 namespace SettingsManagerTests
 {
@@ -48,12 +49,13 @@ namespace SettingsManagerTests
         public string Text { get; set; }
         public TimeSpan TimeSpan { get; set; }
         public TimeSpan TimeSpan2 { get; set; }
-        public CustomSetting Custom {get; set; }
+        public CustomSetting Custom { get; set; }
     }
 
     public class ReadOnlySettings : SelfManagedSettings<ReadOnlySettings>
     {
-        public override bool ReadOnly {
+        public override bool ReadOnly
+        {
             get { return true; }
         }
         public override string Category
@@ -66,7 +68,7 @@ namespace SettingsManagerTests
     [TestClass]
     public class SettingsManagerTests
     {
-        
+
         [TestMethod]
         public void BasicReading()
         {
@@ -86,7 +88,7 @@ namespace SettingsManagerTests
         {
             var repo = new InMemoryRepository();
             var manager = new SettingsManagerPeriodic(repo);
-            var settings = Settings.Get(customSettingsManager:manager);
+            var settings = Settings.Get(customSettingsManager: manager);
 
             var custom = new CustomSetting()
             {
@@ -106,7 +108,7 @@ namespace SettingsManagerTests
             settings.TimeSpan = TimeSpan.MaxValue;
             settings.TimeSpan2 = new TimeSpan(0, 1, 2, 3);
             settings.Custom = custom;
-            
+
             settings.Save();
             settings = Settings.Get(true, manager);
 
@@ -163,7 +165,7 @@ namespace SettingsManagerTests
         public void ReadOnlyPropertyMustBeRespected()
         {
             var repo = new InMemoryRepository();
-            SettingsManager.DefaultManagerInstance =  new SettingsManagerPeriodic(repo);
+            SettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(repo);
 
             var settings = ReadOnlySettings.Get();
 
@@ -175,7 +177,7 @@ namespace SettingsManagerTests
             settings.ChangeAndSave(s => s.Text = "b");
             settings = ReadOnlySettings.Get(true);
             Assert.AreNotEqual("b", settings.Text);
-            
+
         }
 
         [TestMethod]
@@ -193,7 +195,7 @@ namespace SettingsManagerTests
             manager.PeriodicReaderError += (s, a) => { error = true; };
             manager.StartReadingTask(TimeSpan.FromMilliseconds(10), cts.Token);
             Thread.Sleep(200);
-            Assert.AreEqual(false,error);
+            Assert.AreEqual(false, error);
 
 
         }
