@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
 using GlobalSettingsManager;
@@ -68,6 +71,12 @@ namespace SettingsManagerTests
     [TestClass]
     public class SettingsManagerTests
     {
+        private List<SettingsStorageModel> _mockSettingsStorageModels;
+
+        public SettingsManagerTests()
+        {
+            _mockSettingsStorageModels = new List<SettingsStorageModel>();
+        }
 
         [TestMethod]
         public void BasicReading()
@@ -196,8 +205,52 @@ namespace SettingsManagerTests
             manager.StartReadingTask(TimeSpan.FromMilliseconds(10), cts.Token);
             Thread.Sleep(200);
             Assert.AreEqual(false, error);
+        }
 
+        [TestMethod]
+        public void ShouldCheckIfFlagIsSetOnNonEmptyFlagsCollection()
+        {
+            Mock<ISettingsRepository> settingsRepo = new Mock<ISettingsRepository>();
 
+            _mockSettingsStorageModels.AddRange(new List<SettingsStorageModel>{
+                new SettingsStorageModel
+                {
+                    Category = SettingsManager.FlagsCategoryName,
+                    Name = "BiddingSystem",
+                    Value = "true",
+                    UpdatedAt = new DateTime(2015, 1, 1)
+                },
+                new SettingsStorageModel
+                {
+                    Category = SettingsManager.FlagsCategoryName,
+                    Name = "BannerBaseAddress",
+                    Value = "1",
+                    UpdatedAt = new DateTime(2015, 2, 1)
+
+                }});
+
+            settingsRepo.Setup(x => x.ReadSettings(It.IsAny<string>()))
+                .Returns<string>(category => _mockSettingsStorageModels
+                    .Where(x => x.Category == category));
+
+            SettingsManager.DefaultManagerInstance = new SettingsManager(settingsRepo.Object);
+            var settingsManager = (SettingsManager)SettingsManager.DefaultManagerInstance;
+
+            Assert.AreEqual(true, settingsManager.IsFlagSet("BiddingSystem"));
+        }
+
+        [TestMethod]
+        public void ShouldCheckIfFlagIsSetOnEmptyFlagsCollection()
+        {
+            Mock<ISettingsRepository> settingsRepo = new Mock<ISettingsRepository>();
+
+            settingsRepo.Setup(x => x.ReadSettings(It.IsAny<string>()))
+                .Returns<string>(category => new List<SettingsStorageModel>().Where(x => x.Category == category));
+
+            SettingsManager.DefaultManagerInstance = new SettingsManager(settingsRepo.Object);
+            var settingsManager = (SettingsManager)SettingsManager.DefaultManagerInstance;
+
+            Assert.AreEqual(false, settingsManager.IsFlagSet("BiddingSystem"));
         }
     }
 }

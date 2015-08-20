@@ -22,7 +22,7 @@ namespace GlobalSettingsManager
         protected ListDictionary AllSettings = new ListDictionary();
         //protected List<string> SettingsNames = new List<string>(10);
 
-        protected Dictionary<string, bool> Flags = new Dictionary<string, bool>(); 
+        protected Dictionary<string, bool> Flags;
 
         /// <summary>
         /// Raised on when deserializing property value fails
@@ -118,7 +118,7 @@ namespace GlobalSettingsManager
                     if (cachedSettings == null)
                     {
                         //SettingsNames.Add(settingsInstance.Category);
-                        AllSettings.Add(typeof (T), settingsInstance);
+                        AllSettings.Add(typeof(T), settingsInstance);
                     }
                     return settingsInstance;
 
@@ -126,7 +126,7 @@ namespace GlobalSettingsManager
                 return cachedSettings as T;
             }
         }
-        
+
         public virtual bool Save<T>(Expression<Func<T>> property, SettingsBase settings)
         {
             var propertyInfo = ((MemberExpression)property.Body).Member as PropertyInfo;
@@ -241,7 +241,7 @@ namespace GlobalSettingsManager
                     var converted = Converter.ConvertFromString(property.Value, prop.PropertyType);
                     if (!Equals(existing, converted))//custom objects must implement Equals() for this to work
                         settings.OnPropertyChanged(property.Name);
-                    prop.SetValue(settings, converted,  null);
+                    prop.SetValue(settings, converted, null);
 
                 }
                 catch (Exception ex)
