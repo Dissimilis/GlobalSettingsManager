@@ -53,3 +53,4 @@ manager.ThrottlePropertyExceptions = true;
 
 //use this event to log exceptions from running task
 manager.PeriodicReaderError += (sender, args) => { Console.WriteLine(args.ExceptionObject.ToString()); };
+```

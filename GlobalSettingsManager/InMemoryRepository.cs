@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using GlobalSettingsManager;
 
-namespace SettingsManagerTests
+namespace GlobalSettingsManager
 {
-    public class DummyRepo : ISettingsRepository
+    /// <summary>
+    /// Dummy repository for testing and stuff..
+    /// </summary>
+    public class InMemoryRepository : ISettingsRepository
     {
 
         public List<SettingsStorageModel> Content = new List<SettingsStorageModel>(); 

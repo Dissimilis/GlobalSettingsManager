@@ -48,8 +48,8 @@ namespace GlobalSettingsManager
                 {
                     try
                     {
+                        token.WaitHandle.WaitOne(interval); //must be 'await Task.Delay()' in .NET 4.5
                         token.ThrowIfCancellationRequested();
-                        Delay(interval, token).Wait(token); //must be await Task.Delay() in .NET 4.5
                         lock (SyncRoot)
                         {
                             if (PeriodicReaderExecuting != null)
@@ -99,6 +99,7 @@ namespace GlobalSettingsManager
         }
 
 
+
         private List<string> GetCategoriesToRead()
         {
             var result = new List<string>(AllSettings.Count+1);
@@ -106,26 +107,7 @@ namespace GlobalSettingsManager
             result.Add(FlagsCategoryName);
             return result;
         }
-
-        private Task Delay(TimeSpan interval, CancellationToken token)
-        {
-            TaskCompletionSource<object> tcs = new TaskCompletionSource<object>();
-            System.Threading.Timer timer = null;
-            timer = new System.Threading.Timer(p =>
-            {
-                timer.Dispose(); //stop the timer
-                tcs.TrySetResult(null); //timer expired, attempt to move task to the completed state.
-            }, null, (int)interval.TotalMilliseconds, System.Threading.Timeout.Infinite);
-
-            token.Register(() =>
-            {
-                timer.Dispose(); //stop the timer
-                tcs.TrySetCanceled(); //attempt to mode task to canceled state
-            });
-
-            return tcs.Task;
-        }
-
+        
     }
 
 
