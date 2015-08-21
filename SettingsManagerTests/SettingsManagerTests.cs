@@ -71,7 +71,7 @@ namespace SettingsManagerTests
     [TestClass]
     public class SettingsManagerTests
     {
-        private List<SettingsStorageModel> _mockSettingsStorageModels;
+        private readonly List<SettingsStorageModel> _mockSettingsStorageModels;
 
         public SettingsManagerTests()
         {
@@ -240,7 +240,40 @@ namespace SettingsManagerTests
         }
 
         [TestMethod]
-        public void ShouldCheckIfFlagIsSetOnEmptyFlagsCollection()
+        public void ShouldFailWhenInvalidFlagTypesExistOnNonEmptyFlagsCollection()
+        {
+            Mock<ISettingsRepository> settingsRepo = new Mock<ISettingsRepository>();
+
+            _mockSettingsStorageModels.AddRange(new List<SettingsStorageModel>{
+                new SettingsStorageModel
+                {
+                    Category = SettingsManager.FlagsCategoryName,
+                    Name = "ServiceBaseAddress",
+                    Value = "abbv",
+                    UpdatedAt = new DateTime(2015, 1, 1)
+                },
+                new SettingsStorageModel
+                {
+                    Category = SettingsManager.FlagsCategoryName,
+                    Name = "StartCount",
+                    Value = "12",
+                    UpdatedAt = new DateTime(2015, 2, 1)
+
+                }});
+
+            settingsRepo.Setup(x => x.ReadSettings(It.IsAny<string>()))
+                .Returns<string>(category => _mockSettingsStorageModels
+                    .Where(x => x.Category == category));
+
+            SettingsManager.DefaultManagerInstance = new SettingsManager(settingsRepo.Object);
+            var settingsManager = (SettingsManager)SettingsManager.DefaultManagerInstance;
+
+            Assert.AreEqual(false, settingsManager.IsFlagSet("ServiceBaseAddress"));
+            Assert.AreEqual(false, settingsManager.IsFlagSet("StartCount"));
+        }
+
+        [TestMethod]
+        public void FlagShouldNotBeSetOnEmptyFlagsCollection()
         {
             Mock<ISettingsRepository> settingsRepo = new Mock<ISettingsRepository>();
 
@@ -251,6 +284,40 @@ namespace SettingsManagerTests
             var settingsManager = (SettingsManager)SettingsManager.DefaultManagerInstance;
 
             Assert.AreEqual(false, settingsManager.IsFlagSet("BiddingSystem"));
+        }
+
+        [TestMethod]
+        public void PeriodicReaderShouldReactToFlagChanges()
+        {
+            Mock<ISettingsRepository> settingsRepo = new Mock<ISettingsRepository>();
+
+            _mockSettingsStorageModels.AddRange(new List<SettingsStorageModel> {
+                new SettingsStorageModel
+                {
+                    Category = SettingsManager.FlagsCategoryName,
+                    Name = "X",
+                    Value = "true",
+                    UpdatedAt = new DateTime(2015, 1, 1)
+                }
+            });
+
+            settingsRepo.Setup(x => x.ReadSettings(It.IsAny<string>()))
+               .Returns<string>(category => _mockSettingsStorageModels);
+
+            settingsRepo.Setup(x => x.ReadSettings(It.IsAny<IList<string>>(), It.IsAny<DateTime?>()))
+               .Returns<IList<string>, DateTime?>((categories, lastChangedDate) => _mockSettingsStorageModels);
+            var cancellationTokenSource = new CancellationTokenSource();
+
+            SettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(settingsRepo.Object);
+            var manager = (SettingsManagerPeriodic)SettingsManager.DefaultManagerInstance;
+
+            var initialValue = manager.IsFlagSet("X");
+            manager.StartReadingTask(TimeSpan.FromMilliseconds(10), cancellationTokenSource.Token);
+            Thread.Sleep(100);
+            var repoItem = _mockSettingsStorageModels.Single(s => s.Name == "X");
+            repoItem.Value = "0";
+            Thread.Sleep(100);
+            Assert.AreEqual(!initialValue, manager.IsFlagSet("X"));
         }
     }
 }

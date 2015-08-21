@@ -89,7 +89,7 @@ namespace GlobalSettingsManager
                     }
                 }
             }, token);
-            task.ContinueWith(t => 
+            task.ContinueWith(t =>
             {
                 if (PeriodicReaderCanceled != null)
                     PeriodicReaderCanceled.Invoke(this,new EventArgs());
@@ -98,8 +98,6 @@ namespace GlobalSettingsManager
             return task;
         }
 
-
-
         private List<string> GetCategoriesToRead()
         {
             var result = new List<string>(AllSettings.Count+1);
@@ -107,7 +105,6 @@ namespace GlobalSettingsManager
             result.Add(FlagsCategoryName);
             return result;
         }
-        
     }
 
 
