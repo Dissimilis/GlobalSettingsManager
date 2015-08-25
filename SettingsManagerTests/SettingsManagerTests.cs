@@ -190,24 +190,6 @@ namespace SettingsManagerTests
         }
 
         [TestMethod]
-        public void PreriodicReaderMustRaiseError()
-        {
-            var cts = new CancellationTokenSource();
-            var repo = new InMemoryRepository();
-            SettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(repo);
-            var settings = ReadOnlySettings.Get();
-            settings.Text = "a";
-            settings.Save();
-
-            var manager = (SettingsManager.DefaultManagerInstance as SettingsManagerPeriodic);
-            var error = false;
-            manager.PeriodicReaderError += (s, a) => { error = true; };
-            manager.StartReadingTask(TimeSpan.FromMilliseconds(10), cts.Token);
-            Thread.Sleep(200);
-            Assert.AreEqual(false, error);
-        }
-
-        [TestMethod]
         public void ShouldCheckIfFlagIsSetOnNonEmptyFlagsCollection()
         {
             Mock<ISettingsRepository> settingsRepo = new Mock<ISettingsRepository>();
@@ -318,6 +300,30 @@ namespace SettingsManagerTests
             repoItem.Value = "0";
             Thread.Sleep(100);
             Assert.AreEqual(!initialValue, manager.IsFlagSet("X"));
+        }
+
+        [TestMethod]
+        public void PreriodicReaderMustRaiseError()
+        {
+            var cts = new CancellationTokenSource();
+            var repo = new InMemoryRepository();
+            SettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(repo);
+            var settings = ReadOnlySettings.Get();
+            settings.Text = "a";
+            settings.Save();
+
+            var manager = (SettingsManager.DefaultManagerInstance as SettingsManagerPeriodic);
+            var error = false;
+            manager.PeriodicReaderError += (s, a) => { error = true; };
+            manager.StartReadingTask(TimeSpan.FromMilliseconds(10), cts.Token);
+            Thread.Sleep(200);
+            Assert.AreEqual(false, error);
+        }
+
+        [TestMethod]
+        public void PeriodicErrorEventManagerShouldCollectThrownExceptions()
+        {
+
         }
     }
 }

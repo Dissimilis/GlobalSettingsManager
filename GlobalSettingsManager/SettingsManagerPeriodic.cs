@@ -10,7 +10,6 @@ namespace GlobalSettingsManager
 {
     public class SettingsManagerPeriodic : SettingsManager
     {
-
         /// <summary>
         /// Raised when exception occurs in periodic reader
         /// </summary>
@@ -44,6 +43,9 @@ namespace GlobalSettingsManager
             var task = Task.Factory.StartNew(() => //must be async in .net 4.5
             {
                 DateTime lastRead = Now();
+                var timeOfLastFlush = lastRead;
+                var exceptionStorageInterval = PeriodicErrorEventManager.Instance.ExceptionStorageInterval;
+
                 while (true)
                 {
                     try
@@ -76,6 +78,12 @@ namespace GlobalSettingsManager
                             lastRead = settingsFromRepo.Max(s=>s.UpdatedAt); //sets last read time to newest found setting
                             if (lastRead > now) //last read time must not be greated than current time
                                 lastRead = now;
+
+                            if (timeOfLastFlush.Add(exceptionStorageInterval) > now)
+                            {
+                                PeriodicErrorEventManager.Instance.FlushExceptionTypesStorage();
+                                timeOfLastFlush = now;
+                            }
                         }
                     }
                     catch(OperationCanceledException)
@@ -86,6 +94,7 @@ namespace GlobalSettingsManager
                     {
                         if (PeriodicReaderError != null)
                             PeriodicReaderError.Invoke(this, new UnhandledExceptionEventArgs(ex, false));
+                        PeriodicErrorEventManager.Instance.CapturedExceptionTypes.Add(ex.GetType().ToString());
                     }
                 }
             }, token);
@@ -106,6 +115,4 @@ namespace GlobalSettingsManager
             return result;
         }
     }
-
-
 }
