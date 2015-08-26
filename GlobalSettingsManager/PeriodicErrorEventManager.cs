@@ -11,6 +11,11 @@ namespace GlobalSettingsManager
         private static readonly object _padlock = new object();
 
         /// <summary>
+        /// Indicates when CapturedExceptionTypes was last flushed
+        /// </summary>
+        public DateTime LastFlushTime { get; set; }
+
+        /// <summary>
         /// Indicates already caught exception lifespan
         /// </summary>
         public TimeSpan ExceptionStorageInterval { get; set; }

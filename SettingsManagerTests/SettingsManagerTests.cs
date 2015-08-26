@@ -323,7 +323,56 @@ namespace SettingsManagerTests
         [TestMethod]
         public void PeriodicErrorEventManagerShouldCollectThrownExceptions()
         {
+            var cts = new CancellationTokenSource();
+            Mock<ISettingsRepository> settingsRepo = new Mock<ISettingsRepository>();
 
+            settingsRepo.Setup(x => x.ReadSettings(It.IsAny<IList<string>>(), It.IsAny<DateTime?>()))
+                .Returns<IList<string>, DateTime?>((categories, lastChangedDate) => { throw new NullReferenceException(); });
+            SettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(settingsRepo.Object);
+
+            var periodicSettingsManager = (SettingsManager.DefaultManagerInstance as SettingsManagerPeriodic);
+
+            var error = false;
+            periodicSettingsManager.PeriodicReaderError += (sender, eventArgs) => { error = true; };
+            periodicSettingsManager.StartReadingTask(TimeSpan.FromMilliseconds(10), cts.Token);
+
+            Thread.Sleep(300);
+
+            var capturedExceptionTypeSet = PeriodicErrorEventManager.Instance.CapturedExceptionTypes;
+
+            Assert.IsTrue(capturedExceptionTypeSet.Count > 0);
+            Assert.IsTrue(capturedExceptionTypeSet.Contains("System.NullReferenceException"));
+            Assert.AreEqual(true, error);
+        }
+
+        [TestMethod]
+        public void PeriodicErrorEventManagerShouldFlushCaughtExceptionsAfterParticularTimePeriod()
+        {
+            var cts = new CancellationTokenSource();
+
+            Mock<ISettingsRepository> settingsRepo = new Mock<ISettingsRepository>();
+
+            settingsRepo.Setup(x => x.ReadSettings(It.IsAny<IList<string>>(), It.IsAny<DateTime?>()))
+                .Returns<IList<string>, DateTime?>((categories, lastChangedDate) => { throw new NullReferenceException(); });
+            SettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(settingsRepo.Object);
+
+            var periodicSettingsManager = (SettingsManager.DefaultManagerInstance as SettingsManagerPeriodic);
+            PeriodicErrorEventManager.Instance.ExceptionStorageInterval = TimeSpan.FromMilliseconds(200);
+
+            var error = false;
+            periodicSettingsManager.PeriodicReaderError += (sender, eventArgs) => { error = true; };
+            periodicSettingsManager.StartReadingTask(TimeSpan.FromMilliseconds(35), cts.Token);
+            Thread.Sleep(300);
+
+            var capturedExceptionTypeSet = PeriodicErrorEventManager.Instance.CapturedExceptionTypes;
+
+            Assert.IsTrue(capturedExceptionTypeSet.Count == 0);
+
+            if (capturedExceptionTypeSet.Contains("System.NullReferenceException"))
+            {
+                Assert.Fail("PeriodicErrorEventManager CapturedExceptionTypes should not contain any elements after flush");
+            }
+            Assert.AreEqual(true, error);
         }
     }
 }

@@ -33,7 +33,8 @@ namespace GlobalSettingsManager
         /// Initializes settings reader and starts periodic reading task
         /// </summary>
         /// <param name="repository"></param>
-        public SettingsManagerPeriodic(ISettingsRepository repository) : base(repository)
+        public SettingsManagerPeriodic(ISettingsRepository repository)
+            : base(repository)
         {
             ThrowPropertySetExceptionsOnPeriocRead = false;
         }
@@ -43,8 +44,8 @@ namespace GlobalSettingsManager
             var task = Task.Factory.StartNew(() => //must be async in .net 4.5
             {
                 DateTime lastRead = Now();
-                var timeOfLastFlush = lastRead;
-                var exceptionStorageInterval = PeriodicErrorEventManager.Instance.ExceptionStorageInterval;
+                PeriodicErrorEventManager.Instance.LastFlushTime = lastRead;
+                TimeSpan exceptionStorageInterval = PeriodicErrorEventManager.Instance.ExceptionStorageInterval;
 
                 while (true)
                 {
@@ -54,10 +55,12 @@ namespace GlobalSettingsManager
                         token.ThrowIfCancellationRequested();
                         lock (SyncRoot)
                         {
+                            var now = Now();
                             if (PeriodicReaderExecuting != null)
                                 PeriodicReaderExecuting.Invoke(this, new EventArgs());
 
-                            var settingsFromRepo = Repository.ReadSettings(GetCategoriesToRead(), lastRead).ToNonNullArray();
+                            var settingsFromRepo =
+                                Repository.ReadSettings(GetCategoriesToRead(), lastRead).ToNonNullArray();
                             if (settingsFromRepo.Length == 0)
                                 continue;
                             foreach (SettingsBase settings in AllSettings.Values)
@@ -66,7 +69,7 @@ namespace GlobalSettingsManager
                                 var matchingSettings = settingsFromRepo.Where(s => s.Category == category);
                                 SetProperties(settings, matchingSettings, ThrowPropertySetExceptionsOnPeriocRead);
                             }
-                            foreach (var f in settingsFromRepo.Where(s=>s.Category == FlagsCategoryName))
+                            foreach (var f in settingsFromRepo.Where(s => s.Category == FlagsCategoryName))
                             {
                                 if (SetFlag(f.Name, f.Value))
                                 {
@@ -74,21 +77,12 @@ namespace GlobalSettingsManager
                                         FlagChanged.Invoke(this, new PropertyChangedEventArgs(f.Name));
                                 }
                             }
-                            var now = Now();
-                            lastRead = settingsFromRepo.Max(s=>s.UpdatedAt); //sets last read time to newest found setting
+
+                            lastRead = settingsFromRepo.Max(s => s.UpdatedAt);
+                            //sets last read time to newest found setting
                             if (lastRead > now) //last read time must not be greated than current time
                                 lastRead = now;
-
-                            if (timeOfLastFlush.Add(exceptionStorageInterval) > now)
-                            {
-                                PeriodicErrorEventManager.Instance.FlushExceptionTypesStorage();
-                                timeOfLastFlush = now;
-                            }
                         }
-                    }
-                    catch(OperationCanceledException)
-                    {
-                        throw;
                     }
                     catch (Exception ex)
                     {
@@ -96,12 +90,22 @@ namespace GlobalSettingsManager
                             PeriodicReaderError.Invoke(this, new UnhandledExceptionEventArgs(ex, false));
                         PeriodicErrorEventManager.Instance.CapturedExceptionTypes.Add(ex.GetType().ToString());
                     }
+                    finally
+                    {
+                        var now = Now();
+                        var lastFlushTime = PeriodicErrorEventManager.Instance.LastFlushTime.Add(exceptionStorageInterval);
+                        if (lastFlushTime.Ticks < now.Ticks)
+                        {
+                            PeriodicErrorEventManager.Instance.FlushExceptionTypesStorage();
+                            PeriodicErrorEventManager.Instance.LastFlushTime = lastFlushTime;
+                        }
+                    }
                 }
             }, token);
             task.ContinueWith(t =>
             {
                 if (PeriodicReaderCanceled != null)
-                    PeriodicReaderCanceled.Invoke(this,new EventArgs());
+                    PeriodicReaderCanceled.Invoke(this, new EventArgs());
             }, TaskContinuationOptions.OnlyOnCanceled);
             task.ContinueWith(t => { }, TaskContinuationOptions.NotOnRanToCompletion);
             return task;
@@ -109,8 +113,8 @@ namespace GlobalSettingsManager
 
         private List<string> GetCategoriesToRead()
         {
-            var result = new List<string>(AllSettings.Count+1);
-            result.AddRange(from object setting in AllSettings.Values select ((SettingsBase) setting).Category);
+            var result = new List<string>(AllSettings.Count + 1);
+            result.AddRange(from object setting in AllSettings.Values select ((SettingsBase)setting).Category);
             result.Add(FlagsCategoryName);
             return result;
         }
