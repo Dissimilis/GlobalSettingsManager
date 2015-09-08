@@ -10,14 +10,22 @@ namespace GlobalSettingsManager
 {
     public class SettingsManagerPeriodic : SettingsManager
     {
+
+        PeriodicErrorEventManager _periodicReaderErrors = new PeriodicErrorEventManager();
         /// <summary>
         /// Raised when exception occurs in periodic reader
         /// </summary>
-        public event EventHandler<UnhandledExceptionEventArgs> PeriodicReaderError;
+        public event EventHandler<PeriodicReaderErrorEventArgs> PeriodicReaderError;
 
         public event EventHandler PeriodicReaderCanceled;
 
         public event EventHandler PeriodicReaderExecuting;
+
+        public TimeSpan RepeatingErrorInterval
+        {
+            get { return _periodicReaderErrors.RepeatingErrorInterval; }
+            set { _periodicReaderErrors.RepeatingErrorInterval = value; }
+        }
 
         /// <summary>
         /// Default is false
@@ -44,8 +52,6 @@ namespace GlobalSettingsManager
             var task = Task.Factory.StartNew(() => //must be async in .net 4.5
             {
                 DateTime lastRead = Now();
-                PeriodicErrorEventManager.Instance.LastFlushTime = lastRead;
-                TimeSpan exceptionStorageInterval = PeriodicErrorEventManager.Instance.ExceptionStorageInterval;
 
                 while (true)
                 {
@@ -86,19 +92,17 @@ namespace GlobalSettingsManager
                     }
                     catch (Exception ex)
                     {
+                        _periodicReaderErrors.FlushOld(Now());
                         if (PeriodicReaderError != null)
-                            PeriodicReaderError.Invoke(this, new UnhandledExceptionEventArgs(ex, false));
-                        PeriodicErrorEventManager.Instance.CapturedExceptionTypes.Add(ex.GetType().ToString());
-                    }
-                    finally
-                    {
-                        var now = Now();
-                        var lastFlushTime = PeriodicErrorEventManager.Instance.LastFlushTime.Add(exceptionStorageInterval);
-                        if (lastFlushTime.Ticks < now.Ticks)
                         {
-                            PeriodicErrorEventManager.Instance.FlushExceptionTypesStorage();
-                            PeriodicErrorEventManager.Instance.LastFlushTime = lastFlushTime;
+                            var args = new PeriodicReaderErrorEventArgs()
+                            {
+                                Exception = ex,
+                                IsRepeating = _periodicReaderErrors.Contains(ex)
+                            };
+                            PeriodicReaderError.Invoke(this, args);
                         }
+                        _periodicReaderErrors.Add(ex);
                     }
                 }
             }, token);
@@ -118,5 +122,12 @@ namespace GlobalSettingsManager
             result.Add(FlagsCategoryName);
             return result;
         }
+    }
+
+
+    public class PeriodicReaderErrorEventArgs : EventArgs
+    {
+        public Exception Exception { get; set; }
+        public bool IsRepeating { get; set; }
     }
 }

@@ -333,7 +333,10 @@ namespace SettingsManagerTests
             var periodicSettingsManager = (SettingsManager.DefaultManagerInstance as SettingsManagerPeriodic);
 
             var error = false;
-            periodicSettingsManager.PeriodicReaderError += (sender, eventArgs) => { error = true; };
+            periodicSettingsManager.PeriodicReaderError += (sender, eventArgs) =>
+            {
+                error = true;
+            };
             periodicSettingsManager.StartReadingTask(TimeSpan.FromMilliseconds(10), cts.Token);
 
             Thread.Sleep(300);

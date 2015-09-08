@@ -5,50 +5,48 @@ using System.Text;
 
 namespace GlobalSettingsManager
 {
-    public class PeriodicErrorEventManager
+    internal class PeriodicErrorEventManager
     {
-        private static PeriodicErrorEventManager _instance;
-        private static readonly object _padlock = new object();
-
         /// <summary>
         /// Indicates when CapturedExceptionTypes was last flushed
         /// </summary>
-        public DateTime LastFlushTime { get; set; }
+        private DateTime _lastFlushTime;
 
-        /// <summary>
-        /// Indicates already caught exception lifespan
-        /// </summary>
-        public TimeSpan ExceptionStorageInterval { get; set; }
+        public TimeSpan RepeatingErrorInterval { get; set; }
 
         /// <summary>
         /// A set of caught exception type names during defined period of time
         /// </summary>
-        public HashSet<string> CapturedExceptionTypes { get; set; }
+        private HashSet<Type> _capturedExceptionTypes;
 
-        private PeriodicErrorEventManager()
+        public void Add(Exception ex)
         {
-            CapturedExceptionTypes = new HashSet<string>();
-            ExceptionStorageInterval = TimeSpan.FromSeconds(90);
+            _capturedExceptionTypes.Add(ex.GetType());
         }
 
-        public static PeriodicErrorEventManager Instance
+        public bool FlushOld(DateTime now)
         {
-            get
+            if (_lastFlushTime < now - RepeatingErrorInterval)
             {
-                lock (_padlock)
-                {
-                    if (_instance == null)
-                    {
-                        _instance = new PeriodicErrorEventManager();
-                    }
-                    return _instance;
-                }
+                _capturedExceptionTypes.Clear();
+                _lastFlushTime = now;
+                return true;
             }
+            return false;
         }
 
-        public void FlushExceptionTypesStorage()
+        public bool Contains(Exception ex)
         {
-            CapturedExceptionTypes.Clear();
+            return _capturedExceptionTypes.Contains(ex.GetType());
         }
+
+
+        public PeriodicErrorEventManager()
+        {
+            RepeatingErrorInterval = TimeSpan.FromSeconds(90);
+            _capturedExceptionTypes = new HashSet<Type>();
+        }
+
+
     }
 }
