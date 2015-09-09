@@ -15,7 +15,7 @@ namespace GlobalSettingsManager
         /// <summary>
         /// Raised when exception occurs in periodic reader
         /// </summary>
-        public event EventHandler<PeriodicReaderErrorEventArgs> PeriodicReaderError;
+        public event EventHandler<RepeatingErrorEventArgs> PeriodicReaderError;
 
         public event EventHandler PeriodicReaderCanceled;
 
@@ -30,7 +30,7 @@ namespace GlobalSettingsManager
         /// <summary>
         /// Default is false
         /// </summary>
-        public bool ThrowPropertySetExceptionsOnPeriocRead { get; set; }
+        public bool ThrowPropertySetExceptionsOnPeriodicRead { get; set; }
 
         /// <summary>
         /// This event is raised when flag changes in underlying repository
@@ -44,7 +44,7 @@ namespace GlobalSettingsManager
         public SettingsManagerPeriodic(ISettingsRepository repository)
             : base(repository)
         {
-            ThrowPropertySetExceptionsOnPeriocRead = false;
+            ThrowPropertySetExceptionsOnPeriodicRead = false;
         }
 
         public Task StartReadingTask(TimeSpan interval, CancellationToken token)
@@ -73,7 +73,7 @@ namespace GlobalSettingsManager
                             {
                                 var category = settings.Category;
                                 var matchingSettings = settingsFromRepo.Where(s => s.Category == category);
-                                SetProperties(settings, matchingSettings, ThrowPropertySetExceptionsOnPeriocRead);
+                                SetProperties(settings, matchingSettings, ThrowPropertySetExceptionsOnPeriodicRead);
                             }
                             foreach (var f in settingsFromRepo.Where(s => s.Category == FlagsCategoryName))
                             {
@@ -95,7 +95,7 @@ namespace GlobalSettingsManager
                         _periodicReaderErrors.FlushOld(Now());
                         if (PeriodicReaderError != null)
                         {
-                            var args = new PeriodicReaderErrorEventArgs()
+                            var args = new RepeatingErrorEventArgs()
                             {
                                 Exception = ex,
                                 IsRepeating = _periodicReaderErrors.Contains(ex)
@@ -125,9 +125,5 @@ namespace GlobalSettingsManager
     }
 
 
-    public class PeriodicReaderErrorEventArgs : EventArgs
-    {
-        public Exception Exception { get; set; }
-        public bool IsRepeating { get; set; }
-    }
+   
 }

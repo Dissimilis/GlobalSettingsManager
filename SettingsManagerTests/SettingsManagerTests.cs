@@ -321,7 +321,7 @@ namespace SettingsManagerTests
         }
 
         [TestMethod]
-        public void PeriodicErrorEventManagerShouldCollectThrownExceptions()
+        public void PeriodicErrorEventManagerShouldCaptureRepeatingExceptions()
         {
             var cts = new CancellationTokenSource();
             Mock<ISettingsRepository> settingsRepo = new Mock<ISettingsRepository>();
@@ -333,23 +333,24 @@ namespace SettingsManagerTests
             var periodicSettingsManager = (SettingsManager.DefaultManagerInstance as SettingsManagerPeriodic);
 
             var error = false;
+            RepeatingErrorEventArgs repeatingErrorEventArgs = null;
+
             periodicSettingsManager.PeriodicReaderError += (sender, eventArgs) =>
             {
                 error = true;
+                repeatingErrorEventArgs = eventArgs;
             };
             periodicSettingsManager.StartReadingTask(TimeSpan.FromMilliseconds(10), cts.Token);
+            Thread.Sleep(100);
 
-            Thread.Sleep(300);
 
-            var capturedExceptionTypeSet = PeriodicErrorEventManager.Instance.CapturedExceptionTypes;
-
-            Assert.IsTrue(capturedExceptionTypeSet.Count > 0);
-            Assert.IsTrue(capturedExceptionTypeSet.Contains("System.NullReferenceException"));
+            Assert.AreEqual(repeatingErrorEventArgs.Exception.GetType(), typeof(NullReferenceException));
+            Assert.IsTrue(repeatingErrorEventArgs.IsRepeating);
             Assert.AreEqual(true, error);
         }
 
         [TestMethod]
-        public void PeriodicErrorEventManagerShouldFlushCaughtExceptionsAfterParticularTimePeriod()
+        public void RepeatingExceptionsShouldBeFlushedFlushAfterParticularPeriodOfTime()
         {
             var cts = new CancellationTokenSource();
 
@@ -360,22 +361,25 @@ namespace SettingsManagerTests
             SettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(settingsRepo.Object);
 
             var periodicSettingsManager = (SettingsManager.DefaultManagerInstance as SettingsManagerPeriodic);
-            PeriodicErrorEventManager.Instance.ExceptionStorageInterval = TimeSpan.FromMilliseconds(200);
+            periodicSettingsManager.RepeatingErrorInterval = TimeSpan.FromMilliseconds(50);
 
-            var error = false;
-            periodicSettingsManager.PeriodicReaderError += (sender, eventArgs) => { error = true; };
-            periodicSettingsManager.StartReadingTask(TimeSpan.FromMilliseconds(35), cts.Token);
-            Thread.Sleep(300);
+            int repeating=0, nonRepeating=0;
 
-            var capturedExceptionTypeSet = PeriodicErrorEventManager.Instance.CapturedExceptionTypes;
-
-            Assert.IsTrue(capturedExceptionTypeSet.Count == 0);
-
-            if (capturedExceptionTypeSet.Contains("System.NullReferenceException"))
+            periodicSettingsManager.PeriodicReaderError += (sender, eventArgs) =>
             {
-                Assert.Fail("PeriodicErrorEventManager CapturedExceptionTypes should not contain any elements after flush");
-            }
-            Assert.AreEqual(true, error);
+                if (eventArgs.IsRepeating)
+                    repeating++;
+                else
+                {
+                    nonRepeating++;
+                }
+            };
+
+            periodicSettingsManager.StartReadingTask(TimeSpan.Zero, cts.Token);
+            Thread.Sleep(200);
+
+            Assert.IsTrue(repeating > 1);
+            Assert.IsTrue( nonRepeating > 1);
         }
     }
 }
