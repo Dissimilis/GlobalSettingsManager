@@ -98,11 +98,11 @@ namespace GlobalSettingsManager
                             var args = new RepeatingErrorEventArgs()
                             {
                                 Exception = ex,
-                                IsRepeating = _periodicReaderErrors.Contains(ex)
+                                IsRepeating = _periodicReaderErrors.Contains(ex.GetType().Name)
                             };
                             PeriodicReaderError.Invoke(this, args);
                         }
-                        _periodicReaderErrors.Add(ex);
+                        _periodicReaderErrors.Add(ex.GetType().Name);
                     }
                 }
             }, token);
@@ -125,5 +125,5 @@ namespace GlobalSettingsManager
     }
 
 
-   
+
 }

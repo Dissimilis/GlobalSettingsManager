@@ -14,10 +14,6 @@ namespace GlobalSettingsManager
 
         public const string FlagsCategoryName = "Flags";
 
-        protected const int PropertyErrorsThreshold = 12;
-        protected DateTime FirstPropertyError = DateTime.UtcNow;
-        protected int PropertyErrorsCount = 0;
-
         public static readonly object SyncRoot = new object();
         protected ListDictionary AllSettings = new ListDictionary();
         //protected List<string> SettingsNames = new List<string>(10);
@@ -27,9 +23,11 @@ namespace GlobalSettingsManager
         /// <summary>
         /// Raised on when deserializing property value fails
         /// </summary>
-        public event EventHandler<UnhandledExceptionEventArgs> PropertyError;
+        public event EventHandler<RepeatingErrorEventArgs> PropertyError;
 
         protected readonly ISettingsRepository Repository;
+
+        private PeriodicErrorEventManager _periodicReaderErrors = new PeriodicErrorEventManager();
 
         /// <summary>
         /// Default is true; If false - raises PropertyError event instead of throwing
@@ -255,19 +253,29 @@ namespace GlobalSettingsManager
         private bool HandlePropertySetException(SettingsBase settings, SettingsStorageModel property, Exception ex, bool? throwSetException = null)
         {
             throwSetException = throwSetException ?? ThrowPropertySetException;
+
             if (!throwSetException.Value)
             {
-                if (PropertyErrorsCount > PropertyErrorsThreshold && DateTime.UtcNow - FirstPropertyError > TimeSpan.FromMinutes(5)) //reset error counter after 5minutes
+                PeriodicErrorEventManager periodicErrorEventManager = new PeriodicErrorEventManager();
+                string caughtExceptionDetails = string.Format("{0}-{1}", ex.GetType().Name, property.Name);
+
+                periodicErrorEventManager.Add(caughtExceptionDetails);
+
+                if (PropertyError != null && !ThrottlePropertyExceptions) //only raise event when not throttling
                 {
-                    PropertyErrorsCount = 0;
-                    FirstPropertyError = DateTime.UtcNow;
-                }
-                if (PropertyError != null && (PropertyErrorsCount < PropertyErrorsThreshold || !ThrottlePropertyExceptions)) //only raise event when not throttling
-                {
-                    PropertyErrorsCount++;
-                    var propertyExeption = new SettingsPropertyException(String.Format("Error setting property {0}.{1}", settings.Category, property.Name), property.Name, settings.Category,
+                    var propertyException = new SettingsPropertyException(
+                        String.Format("Error setting property {0}.{1}", settings.Category, property.Name),
+                        property.Name,
+                        settings.Category,
                         ex);
-                    PropertyError.Invoke(settings, new UnhandledExceptionEventArgs(propertyExeption, false));
+
+                    var repeatingErrorEventArgs = new RepeatingErrorEventArgs()
+                    {
+                        Exception = propertyException,
+                        IsRepeating = _periodicReaderErrors.Contains(caughtExceptionDetails)
+                    };
+
+                    PropertyError.Invoke(settings, repeatingErrorEventArgs);
                 }
                 return true;
             }

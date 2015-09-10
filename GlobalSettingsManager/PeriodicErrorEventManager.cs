@@ -17,11 +17,11 @@ namespace GlobalSettingsManager
         /// <summary>
         /// A set of caught exception type names during defined period of time
         /// </summary>
-        private HashSet<Type> _capturedExceptionTypes;
+        private HashSet<string> _capturedExceptionTypes;
 
-        public void Add(Exception ex)
+        public void Add(string ex)
         {
-            _capturedExceptionTypes.Add(ex.GetType());
+            _capturedExceptionTypes.Add(ex);
         }
 
         public bool FlushOld(DateTime now)
@@ -35,16 +35,16 @@ namespace GlobalSettingsManager
             return false;
         }
 
-        public bool Contains(Exception ex)
+        public bool Contains(string ex)
         {
-            return _capturedExceptionTypes.Contains(ex.GetType());
+            return _capturedExceptionTypes.Contains(ex);
         }
 
 
         public PeriodicErrorEventManager()
         {
             RepeatingErrorInterval = TimeSpan.FromSeconds(90);
-            _capturedExceptionTypes = new HashSet<Type>();
+            _capturedExceptionTypes = new HashSet<string>();
         }
 
 

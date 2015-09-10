@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
+using System.Runtime.Remoting.Channels;
 using System.Threading;
 using GlobalSettingsManager;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -350,7 +351,7 @@ namespace SettingsManagerTests
         }
 
         [TestMethod]
-        public void RepeatingExceptionsShouldBeFlushedFlushAfterParticularPeriodOfTime()
+        public void RepeatingExceptionsShouldBeFlushedAfterParticularPeriodOfTime()
         {
             var cts = new CancellationTokenSource();
 
@@ -363,7 +364,7 @@ namespace SettingsManagerTests
             var periodicSettingsManager = (SettingsManager.DefaultManagerInstance as SettingsManagerPeriodic);
             periodicSettingsManager.RepeatingErrorInterval = TimeSpan.FromMilliseconds(50);
 
-            int repeating=0, nonRepeating=0;
+            int repeating = 0, nonRepeating = 0;
 
             periodicSettingsManager.PeriodicReaderError += (sender, eventArgs) =>
             {
@@ -380,6 +381,25 @@ namespace SettingsManagerTests
 
             Assert.IsTrue(repeating > 1);
             Assert.IsTrue( nonRepeating > 1);
+        }
+
+        [TestMethod]
+        public void SettingsManagerShouldCollectSetPropertyExceptions()
+        {
+            var inMemoryRepository = new InMemoryRepository();
+            SettingsManager.DefaultManagerInstance = new SettingsManager(inMemoryRepository);
+            var settingsManager = (SettingsManager) SettingsManager.DefaultManagerInstance;
+
+            bool propertyErrorOccurred = false;
+
+            settingsManager.PropertyError += (sender, eventArgs) =>
+            {
+                propertyErrorOccurred = eventArgs.IsRepeating;
+            };
+
+            var settings = settingsManager.Get<Settings>();
+
+            Assert.IsTrue(propertyErrorOccurred);
         }
     }
 }
