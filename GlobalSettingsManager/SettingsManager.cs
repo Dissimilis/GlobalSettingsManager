@@ -35,11 +35,6 @@ namespace GlobalSettingsManager
         public bool ThrowPropertySetException { get; set; }
 
         /// <summary>
-        /// Default is true; Tries not to spam if many deserializing exceptions occurs in small period
-        /// </summary>
-        public bool ThrottlePropertyExceptions { get; set; }
-
-        /// <summary>
         /// Default is true; Writes settings to DB if no previous setting exists
         /// </summary>
         public bool AutoPersistOnCreate { get; set; }
@@ -67,8 +62,6 @@ namespace GlobalSettingsManager
             Converter = new ValueConverter();
 
             AutoPersistOnCreate = true;
-            ThrottlePropertyExceptions = true;
-            ThrottlePropertyExceptions = true;
         }
 
         /// <summary>
@@ -256,12 +249,11 @@ namespace GlobalSettingsManager
 
             if (!throwSetException.Value)
             {
-                PeriodicErrorEventManager periodicErrorEventManager = new PeriodicErrorEventManager();
                 string caughtExceptionDetails = string.Format("{0}-{1}", ex.GetType().Name, property.Name);
 
-                periodicErrorEventManager.Add(caughtExceptionDetails);
+                _periodicReaderErrors.Add(caughtExceptionDetails);
 
-                if (PropertyError != null && !ThrottlePropertyExceptions) //only raise event when not throttling
+                if (PropertyError != null) //only raise event when not throttling
                 {
                     var propertyException = new SettingsPropertyException(
                         String.Format("Error setting property {0}.{1}", settings.Category, property.Name),

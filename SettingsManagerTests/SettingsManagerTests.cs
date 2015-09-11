@@ -166,8 +166,8 @@ namespace SettingsManagerTests
             Thread.Sleep(200);
             cts.Cancel();
             Thread.Sleep(200);
-            Assert.IsTrue(task.IsCanceled);
             Assert.IsTrue(cancelEvent);
+            Assert.IsTrue(task.IsCanceled);
             Assert.IsTrue(cnt > 0);
         }
 
@@ -387,6 +387,9 @@ namespace SettingsManagerTests
         public void SettingsManagerShouldCollectSetPropertyExceptions()
         {
             var inMemoryRepository = new InMemoryRepository();
+            inMemoryRepository.Content.Add(new SettingsStorageModel() { Category = "Settings", Name = "Decimal", Value = "test" });
+            inMemoryRepository.Content.Add(new SettingsStorageModel() { Category = "Settings", Name = "Text", Value = "test" });
+
             SettingsManager.DefaultManagerInstance = new SettingsManager(inMemoryRepository);
             var settingsManager = (SettingsManager) SettingsManager.DefaultManagerInstance;
 
@@ -397,7 +400,7 @@ namespace SettingsManagerTests
                 propertyErrorOccurred = eventArgs.IsRepeating;
             };
 
-            var settings = settingsManager.Get<Settings>();
+            var settings = Settings.Get();
 
             Assert.IsTrue(propertyErrorOccurred);
         }

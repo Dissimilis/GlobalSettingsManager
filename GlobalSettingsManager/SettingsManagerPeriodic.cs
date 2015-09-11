@@ -90,6 +90,10 @@ namespace GlobalSettingsManager
                                 lastRead = now;
                         }
                     }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
                     catch (Exception ex)
                     {
                         _periodicReaderErrors.FlushOld(Now());
