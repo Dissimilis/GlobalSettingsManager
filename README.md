@@ -57,6 +57,9 @@ manager.PropertyError += (sender, args) => { Console.WriteLine(args.ExceptionObj
 //Set to true to prevent spamming errors when repository has invalid value
 manager.ThrottlePropertyExceptions = true;
 
+//use this property to explicitly define for how long an exception should be considered as repeating
+manager.RepeatingErrorInterval = TimeSpan.FromSeconds(30);
+
 //use this event to log exceptions from running task
 manager.PeriodicReaderError += (sender, args) => 
 { 
