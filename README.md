@@ -7,6 +7,12 @@ It should be easy to implement custom ISettingsRepository for using pub/sub or d
 
 Currently it has implementation for periodically reading repository/database to auto update settings values. 
 
+There is an option to check for repeating exceptions of **PropertyError** and **PeriodicReaderError** events by using event argument **RepeatingErrorEventArgs** property **IsRepeating**.
+To configure timespan for how long caught exception should be flagged as repeating, use property **RepeatingErrorInterval** of **SettingsManagerPeriodic** class. 
+Default is 90 seconds.
+
+
+
 **Usage examples:**
 ```csharp
 public class MySettings : SelfManagedSettings<MySettings>
