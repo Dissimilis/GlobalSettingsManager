@@ -52,5 +52,9 @@ manager.PropertyError += (sender, args) => { Console.WriteLine(args.ExceptionObj
 manager.ThrottlePropertyExceptions = true;
 
 //use this event to log exceptions from running task
-manager.PeriodicReaderError += (sender, args) => { Console.WriteLine(args.ExceptionObject.ToString()); };
+manager.PeriodicReaderError += (sender, args) => 
+{ 
+    Console.WriteLine(args.ExceptionObject.ToString());
+    Console.WriteLine(args.IsRepeating); //use property IsRepeating to check whether occured exception has already been caught during a certain period of time to prevent spamming
+};
 ```
