@@ -10,12 +10,11 @@ namespace GlobalSettingsManager
 {
     public class SettingsManager : ISettingsManager
     {
-        public static ISettingsManager DefaultManagerInstance { get; set; }
-
         public const string FlagsCategoryName = "Flags";
 
-        public static readonly object SyncRoot = new object();
-        protected ListDictionary AllSettings = new ListDictionary();
+        protected static readonly object SyncRoot = new object();
+
+        protected readonly ListDictionary AllSettings = new ListDictionary();
         //protected List<string> SettingsNames = new List<string>(10);
 
         protected Dictionary<string, bool> Flags;
@@ -71,7 +70,7 @@ namespace GlobalSettingsManager
         /// <returns>True if flag is set</returns>
         public bool IsFlagSet(string flagName)
         {
-            if (Flags == null)
+            if (Flags == null) //possibility for multiple reads, but thats tradeoff for performance
             {
                 lock (SyncRoot)
                 {
@@ -96,7 +95,7 @@ namespace GlobalSettingsManager
                 if (cachedSettings == null || force)
                 {
                     var settingsInstance = new T();
-                    var savedSettings = Repository.ReadSettings(settingsInstance.Category).ToNonNullArray();
+                    var savedSettings = Repository.ReadSettings(settingsInstance.Category).ToNonNullArray(); //todo: consider moving out of lock
                     if (savedSettings.Length == 0)
                     {
                         if (AutoPersistOnCreate)
@@ -106,9 +105,8 @@ namespace GlobalSettingsManager
                         }
                     }
                     SetProperties(settingsInstance, savedSettings);
-                    if (cachedSettings == null)
+                    if (cachedSettings == null && !AllSettings.Contains(typeof(T)))
                     {
-                        //SettingsNames.Add(settingsInstance.Category);
                         AllSettings.Add(typeof(T), settingsInstance);
                     }
                     return settingsInstance;

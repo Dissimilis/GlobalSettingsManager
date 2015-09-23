@@ -9,7 +9,7 @@ Currently it has implementation for periodically reading repository/database to 
 
 **Usage examples:**
 ```csharp
-public class MySettings : SelfManagedSettings<MySettings>
+public class MySettings : SettingsBase
 {
    public override string Category { get { return "MySettings"; } }
    public DateTime Time { get; set; }
@@ -21,11 +21,11 @@ public class MySettings : SelfManagedSettings<MySettings>
 }
 
 var repo = new SqlRepository("connectionString");
-SettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(repo); 
-var settings = MySettings.Get(); //loads settings from repository keep then cached ()
-settings.Save(); //settings are saved to repository
+var manager = new SettingsManagerPeriodic(repo); 
+var settings = manager.Get<MySettings>(); //loads settings from repository keep then cached ()
+manager.Save(settings); //settings are saved to repository
 var task = manager.StartReadingTask(TimeSpan.FromSeconds(1), new CancelationTokenSource().Token); //periodically monitors repository for changes
-settings.ChangeAndSave((s) => s.Decimal = 1); //changes value and saves to repository in single transaction (needed when periodic reading is enabled)
+manager.ChangeAndSave((s) => s.Decimal = 1, settings); //changes value and saves to repository in single transaction (needed when periodic reading is enabled)
 ```
 **Setting custom serializer**
 ```csharp
@@ -47,10 +47,11 @@ manager.AutoPersistOnCreate = true;
 //Set to false if you don't want to get exception when invalid value in database is found and can't be assigned to property
 manager.ThrowPropertySetException = false;
 //Use this event to log such exception
-manager.PropertyError += (sender, args) => { Console.WriteLine(args.ExceptionObject.ToString()); };
-//Set to true to prevent spamming errors when repository has invalid value
-manager.ThrottlePropertyExceptions = true;
+manager.PropertyError += (sender, args) => { Console.WriteLine(args.Exception.ToString()); };
+//Detects repeating errors and sets IsRepeating property in PeriodicReaderError event args for spamming prevention 
+//Use this property to explicitly define for how long an exception should be considered as repeating (Default is 90 seconds)
+manager.RepeatingErrorInterval = TimeSpan.FromSeconds(60);
 
-//use this event to log exceptions from running task
-manager.PeriodicReaderError += (sender, args) => { Console.WriteLine(args.ExceptionObject.ToString()); };
+//use this event to log exceptions from periodic task
+manager.PeriodicReaderError += (sender, args) => { Console.WriteLine(args.Exception.ToString()); };
 ```

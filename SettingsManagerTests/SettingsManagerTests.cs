@@ -35,7 +35,7 @@ namespace SettingsManagerTests
     }
 
 
-    public class Settings : SelfManagedSettings<Settings>
+    public class Settings : SettingsBase
     {
         public override string Category
         {
@@ -56,7 +56,7 @@ namespace SettingsManagerTests
         public CustomSetting Custom { get; set; }
     }
 
-    public class ReadOnlySettings : SelfManagedSettings<ReadOnlySettings>
+    public class ReadOnlySettings : SettingsBase
     {
         public override bool ReadOnly
         {
@@ -86,8 +86,8 @@ namespace SettingsManagerTests
             repo.Content.Add(new SettingsStorageModel() { Category = "Settings", Name = "Decimal", Value = "1.5" });
             repo.Content.Add(new SettingsStorageModel() { Category = "Settings", Name = "Text", Value = "test" });
 
-            SettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(repo);
-            var settings = Settings.Get();
+            var manager = new SettingsManagerPeriodic(repo);
+            var settings = manager.Get<Settings>();
 
             Assert.AreEqual(1.5m, settings.Decimal);
             Assert.AreEqual("test", settings.Text);
@@ -98,7 +98,7 @@ namespace SettingsManagerTests
         {
             var repo = new InMemoryRepository();
             var manager = new SettingsManagerPeriodic(repo);
-            var settings = Settings.Get(customSettingsManager: manager);
+            var settings = manager.Get<Settings>();
 
             var custom = new CustomSetting()
             {
@@ -119,8 +119,8 @@ namespace SettingsManagerTests
             settings.TimeSpan2 = new TimeSpan(0, 1, 2, 3);
             settings.Custom = custom;
 
-            settings.Save();
-            settings = Settings.Get(true, manager);
+            manager.Save(settings);
+            settings = manager.Get<Settings>(true);
 
             Assert.AreEqual(0.01m, settings.Decimal);
             Assert.AreEqual("test", settings.Text);
@@ -141,11 +141,11 @@ namespace SettingsManagerTests
         {
             var repo = new InMemoryRepository();
             var manager = new SettingsManagerPeriodic(repo);
-            var settings = Settings.Get(customSettingsManager: manager);
+            var settings = manager.Get<Settings>();
 
             settings.Text = "";
-            settings.Save();
-            settings = Settings.Get(true, manager);
+            manager.Save(settings);
+            settings = manager.Get<Settings>();
             Assert.AreEqual("", settings.Text);
         }
 
@@ -155,7 +155,7 @@ namespace SettingsManagerTests
         {
             var repo = new InMemoryRepository();
             var manager = new SettingsManagerPeriodic(repo);
-            var settings = Settings.Get(customSettingsManager: manager);
+            var settings = manager.Get<Settings>();
             var cts = new CancellationTokenSource();
             var task = manager.StartReadingTask(TimeSpan.FromMilliseconds(1), cts.Token);
             int cnt = 0;
@@ -175,17 +175,15 @@ namespace SettingsManagerTests
         public void ReadOnlyPropertyMustBeRespected()
         {
             var repo = new InMemoryRepository();
-            SettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(repo);
-
-            var settings = ReadOnlySettings.Get();
-
+            var manager = new SettingsManagerPeriodic(repo);
+            var settings = manager.Get<ReadOnlySettings>();
             settings.Text = "a";
-            settings.Save();
-            settings = ReadOnlySettings.Get(true);
+            manager.Save(settings);
+            settings = manager.Get<ReadOnlySettings>(true);
             Assert.AreNotEqual("a", settings.Text);
 
-            settings.ChangeAndSave(s => s.Text = "b");
-            settings = ReadOnlySettings.Get(true);
+            manager.ChangeAndSave(s => s.Text = "b", settings);
+            settings = manager.Get<ReadOnlySettings>(true);
             Assert.AreNotEqual("b", settings.Text);
 
         }
@@ -216,10 +214,8 @@ namespace SettingsManagerTests
                 .Returns<string>(category => _mockSettingsStorageModels
                     .Where(x => x.Category == category));
 
-            SettingsManager.DefaultManagerInstance = new SettingsManager(settingsRepo.Object);
-            var settingsManager = (SettingsManager)SettingsManager.DefaultManagerInstance;
-
-            Assert.AreEqual(true, settingsManager.IsFlagSet("BiddingSystem"));
+            var manager = new SettingsManager(settingsRepo.Object);
+            Assert.AreEqual(true, manager.IsFlagSet("BiddingSystem"));
         }
 
         [TestMethod]
@@ -243,16 +239,14 @@ namespace SettingsManagerTests
                     UpdatedAt = new DateTime(2015, 2, 1)
 
                 }});
-
+            
             settingsRepo.Setup(x => x.ReadSettings(It.IsAny<string>()))
                 .Returns<string>(category => _mockSettingsStorageModels
                     .Where(x => x.Category == category));
 
-            SettingsManager.DefaultManagerInstance = new SettingsManager(settingsRepo.Object);
-            var settingsManager = (SettingsManager)SettingsManager.DefaultManagerInstance;
-
-            Assert.AreEqual(false, settingsManager.IsFlagSet("ServiceBaseAddress"));
-            Assert.AreEqual(false, settingsManager.IsFlagSet("StartCount"));
+            var manager = new SettingsManagerPeriodic(settingsRepo.Object);
+            Assert.AreEqual(false, manager.IsFlagSet("ServiceBaseAddress"));
+            Assert.AreEqual(false, manager.IsFlagSet("StartCount"));
         }
 
         [TestMethod]
@@ -263,10 +257,8 @@ namespace SettingsManagerTests
             settingsRepo.Setup(x => x.ReadSettings(It.IsAny<string>()))
                 .Returns<string>(category => new List<SettingsStorageModel>().Where(x => x.Category == category));
 
-            SettingsManager.DefaultManagerInstance = new SettingsManager(settingsRepo.Object);
-            var settingsManager = (SettingsManager)SettingsManager.DefaultManagerInstance;
-
-            Assert.AreEqual(false, settingsManager.IsFlagSet("BiddingSystem"));
+            var manager = new SettingsManagerPeriodic(settingsRepo.Object);
+            Assert.AreEqual(false, manager.IsFlagSet("BiddingSystem"));
         }
 
         [TestMethod]
@@ -291,8 +283,7 @@ namespace SettingsManagerTests
                .Returns<IList<string>, DateTime?>((categories, lastChangedDate) => _mockSettingsStorageModels);
             var cancellationTokenSource = new CancellationTokenSource();
 
-            SettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(settingsRepo.Object);
-            var manager = (SettingsManagerPeriodic)SettingsManager.DefaultManagerInstance;
+            var manager = new SettingsManagerPeriodic(settingsRepo.Object);
 
             var initialValue = manager.IsFlagSet("X");
             manager.StartReadingTask(TimeSpan.FromMilliseconds(10), cancellationTokenSource.Token);
@@ -308,12 +299,11 @@ namespace SettingsManagerTests
         {
             var cts = new CancellationTokenSource();
             var repo = new InMemoryRepository();
-            SettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(repo);
-            var settings = ReadOnlySettings.Get();
+            var manager = new SettingsManagerPeriodic(repo);
+            var settings = manager.Get<ReadOnlySettings>();
             settings.Text = "a";
-            settings.Save();
+            manager.Save(settings);
 
-            var manager = (SettingsManager.DefaultManagerInstance as SettingsManagerPeriodic);
             var error = false;
             manager.PeriodicReaderError += (s, a) => { error = true; };
             manager.StartReadingTask(TimeSpan.FromMilliseconds(10), cts.Token);
@@ -329,21 +319,18 @@ namespace SettingsManagerTests
 
             settingsRepo.Setup(x => x.ReadSettings(It.IsAny<IList<string>>(), It.IsAny<DateTime?>()))
                 .Returns<IList<string>, DateTime?>((categories, lastChangedDate) => { throw new NullReferenceException(); });
-            SettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(settingsRepo.Object);
-
-            var periodicSettingsManager = (SettingsManager.DefaultManagerInstance as SettingsManagerPeriodic);
+            var manager = new SettingsManagerPeriodic(settingsRepo.Object);
 
             var error = false;
             RepeatingErrorEventArgs repeatingErrorEventArgs = null;
 
-            periodicSettingsManager.PeriodicReaderError += (sender, eventArgs) =>
+            manager.PeriodicReaderError += (sender, eventArgs) =>
             {
                 error = true;
                 repeatingErrorEventArgs = eventArgs;
             };
-            periodicSettingsManager.StartReadingTask(TimeSpan.FromMilliseconds(10), cts.Token);
+            manager.StartReadingTask(TimeSpan.FromMilliseconds(10), cts.Token);
             Thread.Sleep(100);
-
 
             Assert.AreEqual(repeatingErrorEventArgs.Exception.GetType(), typeof(NullReferenceException));
             Assert.IsTrue(repeatingErrorEventArgs.IsRepeating);
@@ -359,14 +346,12 @@ namespace SettingsManagerTests
 
             settingsRepo.Setup(x => x.ReadSettings(It.IsAny<IList<string>>(), It.IsAny<DateTime?>()))
                 .Returns<IList<string>, DateTime?>((categories, lastChangedDate) => { throw new NullReferenceException(); });
-            SettingsManager.DefaultManagerInstance = new SettingsManagerPeriodic(settingsRepo.Object);
-
-            var periodicSettingsManager = (SettingsManager.DefaultManagerInstance as SettingsManagerPeriodic);
-            periodicSettingsManager.RepeatingErrorInterval = TimeSpan.FromMilliseconds(50);
+            var manager = new SettingsManagerPeriodic(settingsRepo.Object);
+            manager.RepeatingErrorInterval = TimeSpan.FromMilliseconds(50);
 
             int repeating = 0, nonRepeating = 0;
 
-            periodicSettingsManager.PeriodicReaderError += (sender, eventArgs) =>
+            manager.PeriodicReaderError += (sender, eventArgs) =>
             {
                 if (eventArgs.IsRepeating)
                     repeating++;
@@ -376,7 +361,7 @@ namespace SettingsManagerTests
                 }
             };
 
-            periodicSettingsManager.StartReadingTask(TimeSpan.Zero, cts.Token);
+            manager.StartReadingTask(TimeSpan.Zero, cts.Token);
             Thread.Sleep(200);
 
             Assert.IsTrue(repeating > 1);
@@ -390,18 +375,17 @@ namespace SettingsManagerTests
             inMemoryRepository.Content.Add(new SettingsStorageModel() { Category = "Settings", Name = "Decimal", Value = "test" });
             inMemoryRepository.Content.Add(new SettingsStorageModel() { Category = "Settings", Name = "Text", Value = "test" });
 
-            SettingsManager.DefaultManagerInstance = new SettingsManager(inMemoryRepository);
-            var settingsManager = (SettingsManager) SettingsManager.DefaultManagerInstance;
+            var manager = new SettingsManagerPeriodic(inMemoryRepository);
 
             bool propertyErrorOccurred = false;
 
-            settingsManager.PropertyError += (sender, eventArgs) =>
+            manager.PropertyError += (sender, eventArgs) =>
             {
                 propertyErrorOccurred = eventArgs.IsRepeating;
             };
 
-            var settings = Settings.Get();
-
+            var settings = manager.Get<Settings>(true);
+                
             Assert.IsTrue(propertyErrorOccurred);
         }
     }

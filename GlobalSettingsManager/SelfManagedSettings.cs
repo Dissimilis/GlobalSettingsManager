@@ -7,8 +7,11 @@ namespace GlobalSettingsManager
     /// Settings base class with Save/Get methods
     /// </summary>
     /// <typeparam name="T"></typeparam>
+    [Obsolete("Use SettingsManager.Get<T>()", true)]
     public abstract class SelfManagedSettings<T> : SettingsBase where T : SelfManagedSettings<T>, new()
     {
+
+        //public static SettingsManager DefaultManagerInstance { get; set; }
 
         /// <summary>
         /// Manager which was used to load this object
@@ -23,7 +26,7 @@ namespace GlobalSettingsManager
         /// <returns></returns>
         public static T Get(bool force = false, ISettingsManager customSettingsManager = null)
         {
-            var manager = customSettingsManager ?? SettingsManager.DefaultManagerInstance;
+            var manager = customSettingsManager;// ?? SettingsManager.DefaultManagerInstance;
             if (manager == null)
                 throw new ArgumentNullException("customSettingsManager", "Settings manager not provided and default settings manager is not set");
             var settings = manager.Get<T>(force);
@@ -66,12 +69,14 @@ namespace GlobalSettingsManager
 
         private ISettingsManager GetManager()
         {
-            return (Manager ?? SettingsManager.DefaultManagerInstance);
+            return Manager;
+            //return (Manager ?? SettingsManager.DefaultManagerInstance);
         }
 
 
     }
 
+    [Obsolete("", true)]
     public class SettingsGetException : Exception
     {
         public SettingsGetException(string messgae) : base(messgae)
