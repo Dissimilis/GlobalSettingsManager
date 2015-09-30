@@ -93,6 +93,21 @@ namespace SettingsManagerTests
             Assert.AreEqual("test", settings.Text);
         }
 
+
+        [TestMethod]
+        public void PeriodicReaderMustDetectNewFlags()
+        {
+            var cts = new CancellationTokenSource();
+            var repo = new InMemoryRepository();
+            var manager = new SettingsManagerPeriodic(repo);
+            Assert.AreEqual(false, manager.IsFlagSet("TestFlag"));
+            manager.StartReadingTask(TimeSpan.FromMilliseconds(10), cts.Token);
+            repo.Content.Add(new SettingsStorageModel() { Category = SettingsManager.FlagsCategoryName, Name = "TestFlag", Value = "True" });
+            Thread.Sleep(200);
+            Assert.AreEqual(true, manager.IsFlagSet("TestFlag"));
+            cts.Cancel();
+        }
+
         [TestMethod]
         public void SavingAndLoadingMustBeSame()
         {

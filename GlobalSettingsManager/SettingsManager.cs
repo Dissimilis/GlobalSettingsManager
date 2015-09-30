@@ -10,7 +10,7 @@ namespace GlobalSettingsManager
 {
     public class SettingsManager : ISettingsManager
     {
-        public const string FlagsCategoryName = "Flags";
+        public const string FlagsCategoryName = "Flag";
 
         protected static readonly object SyncRoot = new object();
 
@@ -70,16 +70,14 @@ namespace GlobalSettingsManager
         /// <returns>True if flag is set</returns>
         public bool IsFlagSet(string flagName)
         {
-            if (Flags == null) //possibility for multiple reads, but thats tradeoff for performance
+            if (Flags == null) 
             {
-                lock (SyncRoot)
-                {
+                if (Flags == null)
                     Flags = new Dictionary<string, bool>();
-                    var flagsFromDb = Repository.ReadSettings(FlagsCategoryName).ToNonNullArray();
-                    foreach (var f in flagsFromDb)
-                    {
-                        SetFlag(f.Name, f.Value);
-                    }
+                var flagsFromDb = Repository.ReadSettings(FlagsCategoryName).ToNonNullArray();
+                foreach (var f in flagsFromDb)
+                {
+                    SetFlag(f.Name, f.Value);
                 }
             }
             bool flag = false;
@@ -202,11 +200,14 @@ namespace GlobalSettingsManager
         protected bool SetFlag(string name, string value)
         {
             var boolValue = IsTrueString(value);
-            bool flag;
-            if (!Flags.TryGetValue(name, out flag) || flag != boolValue)
+            lock (SyncRoot)
             {
-                Flags[name] = boolValue;
-                return true;
+                bool flag;
+                if (!Flags.TryGetValue(name, out flag) || flag != boolValue)
+                {
+                    Flags[name] = boolValue;
+                    return true;
+                }
             }
             return false;
         }

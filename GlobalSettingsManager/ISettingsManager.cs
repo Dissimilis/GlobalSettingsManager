@@ -12,7 +12,7 @@ namespace GlobalSettingsManager
         /// <typeparam name="T"></typeparam>
         /// <param name="force">Forces to create new instance (read from repository)</param>
         /// <returns></returns>
-        T Get<T>(bool force) where T : SettingsBase, new();
+        T Get<T>(bool force = false) where T : SettingsBase, new();
 
         /// <summary>
         /// Checks if flag is set to true
