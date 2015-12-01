@@ -72,8 +72,7 @@ namespace GlobalSettingsManager
         {
             if (Flags == null) 
             {
-                if (Flags == null)
-                    Flags = new Dictionary<string, bool>();
+                Flags = new Dictionary<string, bool>();
                 var flagsFromDb = Repository.ReadSettings(FlagsCategoryName).ToNonNullArray();
                 foreach (var f in flagsFromDb)
                 {
@@ -202,6 +201,12 @@ namespace GlobalSettingsManager
             var boolValue = IsTrueString(value);
             lock (SyncRoot)
             {
+                if (Flags == null)
+                {
+                    Flags = new Dictionary<string, bool>();
+                    Flags[name] = boolValue;
+                    return true;
+                }
                 bool flag;
                 if (!Flags.TryGetValue(name, out flag) || flag != boolValue)
                 {
@@ -275,6 +280,8 @@ namespace GlobalSettingsManager
 
         private bool IsTrueString(string value)
         {
+            if (string.IsNullOrEmpty(value))
+                return false;
             bool boolValue;
             if (bool.TryParse(value, out boolValue))
             {
