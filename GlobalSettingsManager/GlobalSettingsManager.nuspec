@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
     <metadata>
         <id>AdDuplex.GlobalSettingsManager</id>
-        <version>1.0.0.0</version>
+        <version>1.0.1.0</version>
         <title>AdDuplex.GlobalSettingsManager</title>
         <authors>AdDuplex</authors>
         <owners>AdDuplex</owners>
@@ -14,5 +14,8 @@
         <file src="bin\Release\GlobalSettingsManager.dll" target="lib\GlobalSettingsManager.dll" />
         <file src="bin\Release\GlobalSettingsManager.pdb" target="lib\GlobalSettingsManager.pdb" />
         <file src="bin\Release\GlobalSettingsManager.xml" target="lib\GlobalSettingsManager.xml" />
+		    <file src="bin\Release\GlobalSettingsManager.dll" target="lib\net40\GlobalSettingsManager.dll" />
+        <file src="bin\Release\GlobalSettingsManager.pdb" target="lib\net40\GlobalSettingsManager.pdb" />
+        <file src="bin\Release\GlobalSettingsManager.xml" target="lib\net40\GlobalSettingsManager.xml" />
     </files>
 </package>
