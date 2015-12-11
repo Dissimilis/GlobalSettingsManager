@@ -139,6 +139,28 @@ namespace SettingsManagerTests
         }
 
         [TestMethod]
+        public void SavingMustWriteNewObjectToRepository()
+        {
+            var repo = new InMemoryRepository();
+            var manager = new SettingsManagerPeriodic(repo){AutoPersistOnCreate = false};
+            var settings = manager.Get<Settings>();
+
+            var custom = new CustomSetting()
+            {
+                Text = "abc"
+            };
+            var value = repo.Content.Where(i => i.Name == "Custom").Select(i=>i.Value).FirstOrDefault();
+            Assert.IsNull(settings.Custom);
+            Assert.IsNull(value);
+
+            settings.Custom = custom;
+            manager.Save(settings);
+            value = repo.Content.First(i => i.Name == "Custom").Value;
+            Assert.IsNotNull(value);
+            Assert.IsTrue(value.Contains("abc"));
+        }
+
+        [TestMethod]
         public void EmptyStringsMustWork()
         {
             var repo = new InMemoryRepository();
