@@ -18,20 +18,6 @@ namespace SettingsManagerTests
         public string Text { get; set; }
         public CustomSetting Ref { get; set; }
 
-        public override bool Equals(object obj)
-        {
-            var o = obj as CustomSetting;
-            if (o != null)
-            {
-                return Text == o.Text && ((Ref == o.Ref) || Ref.Equals(o.Ref));
-            }
-            return false;
-        }
-
-        public override int GetHashCode()
-        {
-            return 1;
-        }
     }
 
 
@@ -148,7 +134,8 @@ namespace SettingsManagerTests
             Assert.AreEqual(0, (int)(DateTime.MaxValue - settings.Time).TotalSeconds); //compare only to seconds precision
             Assert.AreEqual(TimeSpan.MaxValue, settings.TimeSpan);
             Assert.AreEqual(new TimeSpan(0, 1, 2, 3), settings.TimeSpan2);
-            Assert.AreEqual(custom, settings.Custom);
+            Assert.AreEqual(custom.Text, settings.Custom.Text);
+            Assert.AreEqual(custom.Ref.Text, settings.Custom.Ref.Text);
         }
 
         [TestMethod]
