@@ -184,7 +184,7 @@ namespace SettingsManagerTests
             var task = manager.StartReadingTask(TimeSpan.FromMilliseconds(1), cts.Token);
             int cnt = 0;
             bool cancelEvent = false;
-            manager.PeriodicReaderExecuting += (sender, args) => cnt++;
+            manager.ReaderExecuting += (sender, args) => cnt++;
             manager.PeriodicReaderCanceled += (sender, args) => cancelEvent = true;
 
             Thread.Sleep(200);
