@@ -173,7 +173,44 @@ namespace SettingsManagerTests
             Assert.AreEqual("", settings.Text);
         }
 
-
+        [TestMethod]
+        public void PropertyChangedEventMustFire()
+        {
+            var repo = new InMemoryRepository();
+            var manager = new SettingsManagerPeriodic(repo);
+            var settings = manager.Get<Settings>();
+            settings.Text = "old";
+            string newValue = "";
+            string oldValue = "";
+            manager.PropertyValueChanged += (sender, args) =>
+            {
+                args.When<Settings, string>((s) => s.Text, (ov, nv) =>
+                {
+                    oldValue = ov;
+                    newValue = nv;
+                });
+            };
+            repo.Content.Single(s => s.Name == "Text").Value = "new"; //simulate value change in repository (db)
+            manager.Get<Settings>(true);
+            Assert.AreEqual("new", newValue);
+            Assert.AreEqual("old", oldValue);
+        }
+        [TestMethod]
+        public void PropertyChangedEventMustNotFireWhenPropertyValueNotChanged()
+        {
+            var repo = new InMemoryRepository();
+            var manager = new SettingsManagerPeriodic(repo);
+            var settings = manager.Get<Settings>();
+            settings.Text = "old";
+            var fired = false;
+            manager.PropertyValueChanged += (sender, args) =>
+            {
+                fired = true;
+            };
+            manager.ChangeAndSave(s => s.Text = "old", settings);
+            manager.Get<Settings>(true);
+            Assert.IsFalse(fired);
+        }
         [TestMethod]
         public void PeriodicReaderCancel()
         {

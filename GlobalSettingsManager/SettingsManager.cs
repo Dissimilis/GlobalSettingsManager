@@ -20,9 +20,14 @@ namespace GlobalSettingsManager
         protected Dictionary<string, bool> Flags;
 
         /// <summary>
-        /// Raised on when deserializing property value fails
+        /// Raised when deserializing property value fails
         /// </summary>
         public event EventHandler<RepeatingErrorEventArgs> PropertyError;
+
+        /// <summary>
+        /// Raised when settings property value changes (only when reading from repository, calling ChangeAndSave will not raise this event)
+        /// </summary>
+        public event EventHandler<PropertyChangeEventArgs> PropertyValueChanged;
 
         protected readonly ISettingsRepository Repository;
 
@@ -68,7 +73,7 @@ namespace GlobalSettingsManager
         /// </summary>
         /// <param name="flagName"></param>
         /// <returns>True if flag is set</returns>
-        public bool IsFlagSet(string flagName)
+        public virtual bool IsFlagSet(string flagName)
         {
             if (Flags == null) 
             {
@@ -84,14 +89,14 @@ namespace GlobalSettingsManager
             return flag;
         }
 
-        public T Get<T>(bool force = false) where T : SettingsBase, new()
+        public virtual T Get<T>(bool force = false) where T : SettingsBase, new()
         {
-            var cachedSettings = AllSettings[typeof(T)];
+            var cachedSettings = AllSettings[typeof(T)] as T;
             lock (SyncRoot)
             {
                 if (cachedSettings == null || force)
                 {
-                    var settingsInstance = new T();
+                    var settingsInstance = cachedSettings ?? new T(); //use cachedSettings if possible for change detection
                     var savedSettings = Repository.ReadSettings(settingsInstance.Category).ToNonNullArray(); //todo: consider moving out of lock
                     if (savedSettings.Length == 0)
                     {
@@ -101,7 +106,7 @@ namespace GlobalSettingsManager
                             Repository.WriteSettings(model); //todo: consider moving out of lock
                         }
                     }
-                    SetProperties(settingsInstance, savedSettings);
+                    SetProperties(settingsInstance, savedSettings); 
                     if (cachedSettings == null && !AllSettings.Contains(typeof(T)))
                     {
                         AllSettings.Add(typeof(T), settingsInstance);
@@ -109,7 +114,7 @@ namespace GlobalSettingsManager
                     return settingsInstance;
 
                 }
-                return cachedSettings as T;
+                return cachedSettings;
             }
         }
 
@@ -196,7 +201,7 @@ namespace GlobalSettingsManager
         /// Updates flag with provided value
         /// </summary>
         /// <returns>True if flag was changed</returns>
-        protected bool SetFlag(string name, string value)
+        protected virtual bool SetFlag(string name, string value)
         {
             var boolValue = IsTrueString(value);
             lock (SyncRoot)
@@ -234,8 +239,14 @@ namespace GlobalSettingsManager
                     var existing = prop.GetValue(settings, null);
 
                     var converted = Converter.ConvertFromString(property.Value, prop.PropertyType);
-                    if (!Equals(existing, converted))//custom objects must implement Equals() for this to work
+                    if (!Equals(existing, converted)) //custom objects must implement Equals() for this to work
+                    {
                         settings.OnPropertyChanged(property.Name);
+                        if (PropertyValueChanged != null)
+                        {
+                            PropertyValueChanged(this, new PropertyChangeEventArgs(){NewValue = converted, OldValue = existing, Settings = settings, PropertyName = property.Name});
+                        }
+                    }
                     prop.SetValue(settings, converted, null);
 
                 }
