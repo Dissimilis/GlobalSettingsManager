@@ -30,12 +30,14 @@ namespace GlobalSettingsManager
                 throw new ArgumentException("Property not from generic T", "property");
             return propertyInfo.Name == PropertyName;
         }
+
         /// <summary>
         /// Invokes action if event args maches provided property
         /// </summary>
         /// <typeparam name="T">Settings</typeparam>
         /// <typeparam name="TP">Property type</typeparam>
         /// <param name="property">Property to check</param>
+        /// <param name="action">Action where first param is old value and second param is new valu</param>
         public void When<T,TP>(Expression<Func<T, TP>> property, Action<TP, TP> action) where T : SettingsBase
         {
             if (Is(property))
@@ -46,7 +48,23 @@ namespace GlobalSettingsManager
                 }
             }
         }
-
+        /// <summary>
+        /// Invokes action if event args maches provided property
+        /// </summary>
+        /// <typeparam name="T">Settings</typeparam>
+        /// <typeparam name="TP">Property type</typeparam>
+        /// <param name="property">Property to check</param>
+        /// <param name="action">Action where param is new (changed) valu</param>
+        public void When<T, TP>(Expression<Func<T, TP>> property, Action<TP> action) where T : SettingsBase
+        {
+            if (Is(property))
+            {
+                if (action != null)
+                {
+                    action.Invoke((TP)NewValue);
+                }
+            }
+        }
 
     }
 }
