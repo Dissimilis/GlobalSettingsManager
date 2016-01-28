@@ -26,8 +26,15 @@ namespace GlobalSettingsManager
         /// </summary>
         public bool ReadOnly { get; set; }
 
+
+        /// <param name="connectionString">Connection string for settings database</param>
+        /// <param name="settingsTableName">Settings table name. Will be used in queries tamplates like this: "FROM {0} WHERE"</param>
         public SqlRepository(string connectionString, string settingsTableName)
         {
+            if (string.IsNullOrEmpty(connectionString))
+                throw new ArgumentException("Ivalid connection string");
+            if (string.IsNullOrEmpty(settingsTableName))
+                throw new ArgumentException("Ivalid settings table name");
             _connectionString = connectionString;
             _settingsTableName = settingsTableName;
             _mergeQuery = string.Format(MergeQueryTemplate, _settingsTableName);

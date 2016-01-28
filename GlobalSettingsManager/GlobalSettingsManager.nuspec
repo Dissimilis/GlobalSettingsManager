@@ -11,6 +11,7 @@
         <releaseNotes />
     </metadata>
     <files>
+        <file src="bin\Release\GlobalSettingsManager.dll" target="lib\SqlTableCreate.sql" />
         <file src="bin\Release\GlobalSettingsManager.dll" target="lib\GlobalSettingsManager.dll" />
         <file src="bin\Release\GlobalSettingsManager.pdb" target="lib\GlobalSettingsManager.pdb" />
         <file src="bin\Release\GlobalSettingsManager.xml" target="lib\GlobalSettingsManager.xml" />
