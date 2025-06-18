@@ -1,6 +1,7 @@
 GlobalSettingsManager
 =============
-**This project is archived and no longer maintained.**
+**!!!!!!!!!!!!!!! This project is archived and no longer maintained.**
+
 Library for sharing settings across multiple projects.
 Currently it has implementation to use SQL Server for storage and communication.
 
